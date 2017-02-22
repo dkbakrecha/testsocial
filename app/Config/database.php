@@ -71,7 +71,7 @@ class DATABASE_CONFIG {
 		'login' => 'root',
 		'password' => '',
 		'database' => 'test_social',
-		'prefix' => '',
+		'prefix' => 'ts_',
 		//'encoding' => 'utf8',
 	);
 

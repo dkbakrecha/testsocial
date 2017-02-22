@@ -55,9 +55,9 @@ h3 {
 
 .navbar-nav > li > a{
     line-height: 20px;
-padding-top: 20px;
-padding-bottom: 20px;
-font-size: 16px; 
+    padding-top: 20px;
+    padding-bottom: 20px;
+    font-size: 16px; 
     border-bottom: 2px solid transparent;
 }
 
@@ -219,8 +219,8 @@ input[type="submit"], button, input[type="button"] {
 .box-form input[type="email"],
 .box-form input[type="password"],
 .box-form textarea{
-		background: #fafafa;
-		margin-bottom: 10px;
+    background: #fafafa;
+    margin-bottom: 10px;
 }
 
 /*========================
@@ -475,10 +475,10 @@ ul.social-media > li:hover a {
 
 .home-text {
     background: #fff none repeat scroll 0 0;
-	min-height: 500px;
+    min-height: 500px;
     padding: 10px 40px 40px;
-	float: left;
-	width: 100%;
+    float: left;
+    width: 100%;
 }
 
 .home-text > h3,
@@ -489,7 +489,7 @@ ul.social-media > li:hover a {
 }
 
 .home-text > h3 span{
-		color : #f8b54d;
+    color : #f8b54d;
 }
 
 .home-text > h3::after {
@@ -532,7 +532,7 @@ ul.social-media > li:hover a {
     font-size: 32px;
     margin-bottom: 10px;
     margin-top: 0;
-	font-family: 'Bubblegum Sans', cursive;
+    font-family: 'Bubblegum Sans', cursive;
 }
 
 .sub-title::after {
@@ -557,20 +557,20 @@ ul.social-media > li:hover a {
 }
 
 .feature-info h4{
-	color:#f8b54d;
-	font-family: 'Bubblegum Sans', cursive;
-	font-size:24px;
-	padding-left: 10px;
+    color:#f8b54d;
+    font-family: 'Bubblegum Sans', cursive;
+    font-size:24px;
+    padding-left: 10px;
 }
 
 .section-description {
-	float:left;
+    float:left;
     color: #888888;
     font-size: 16px;
     font-style: oblique;
     letter-spacing: 1px;
     margin-bottom: 15px;
-	padding:10px 15px;
+    padding:10px 15px;
     text-align: center;
     width: 100%;
 }
@@ -587,7 +587,7 @@ ul.social-media > li:hover a {
 .feature-icon .highlight {
     color: #0cb4ce;
     font-size: 50px;
-	margin-top:15px;
+    margin-top:15px;
 }
 
 .back-icon {
@@ -785,7 +785,7 @@ ul.social-media > li:hover a {
     border: 1px solid #e5e5e5;
     float: left;
     width: 100%;
-    min-height: 200px;
+    min-height: 450px;
 }
 
 .box.no-hight{
@@ -794,7 +794,7 @@ ul.social-media > li:hover a {
 
 .box.login-box {
     padding-top: 20px;
-    min-height: 400px;
+    min-height: 500px;
 }
 
 .side-bar-section .box{
@@ -867,27 +867,27 @@ input[type="submit"].box-submitbtn{
 }
 
 .box-form label {
-	float: left;
+    float: left;
     color: #333;
     font-size: 16px;
     padding-top: 10px;
 }
 
 .box-form .box-form-action{
-	margin:15px 0px;
-	padding:20px 25px;
-	background:#f7f7f7;
-	font-size:16px;
-	line-height:1.7;
+    margin:15px 0px;
+    padding:20px 25px;
+    background:#f7f7f7;
+    font-size:16px;
+    line-height:1.7;
 }
 
 .box-form .box-form-action a{
-	margin: auto 10px;
-	color: #777;
+    margin: auto 10px;
+    color: #777;
 }
 
 .box-form .box-form-action a:hover{
-	text-decoration: none;
+    text-decoration: none;
 }
 
 ul.side-links {
@@ -929,41 +929,44 @@ label.error{
 }
 
 .question_title{
-		background-color: #fff;
-		border-color: #ddd;
-		border-radius: 4px 4px 0 0;
-		border-width: 1px 1px 0;
-		border-style: solid;
-		box-shadow: none;
-		padding: 20px 15px 15px;
-		font-weight: 600;
-		color: #355c7d;
-	}
+    background-color: #fff;
+    border-color: #ddd;
+    border-radius: 4px 4px 0 0;
+    border-width: 1px 1px 0;
+    border-style: solid;
+    box-shadow: none;
+    padding: 20px 15px 15px;
+    font-weight: 600;
+    color: #355c7d;
+}
 
-	.question_title span{
-		color: #959595;
-	}
+.question_title span{
+    color: #959595;
+}
 
-	.question_option{
-		background: #f7f7f9;
-		border-color: #ddd;
-		border-bottom-left-radius: 4px;
-		border-bottom-right-radius: 4px;
-		border-width: 1px;
-		border-style: solid;
-		margin-bottom: 15px;
-		padding: 9px 14px;
-	}
-        
-        .correct_ans{
-            color: #355c7d;
-            font-weight: 600; 
-        }
-        
-        .navbar-default .navbar-brand {
- 
+.question_option{
+    background: #f7f7f9;
+    border-color: #ddd;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-width: 1px;
+    border-style: solid;
+    margin-bottom: 15px;
+    padding: 9px 14px;
+}
+
+.correct_ans{
+    color: #355c7d;
+    font-weight: 600; 
+}
+
+.navbar-default .navbar-brand {
+
     padding: 5px 15px;
     height: auto;
+    line-height: 50px;
+    font-size: 20px;
+    font-weight: 600;
 }
 
 .gkbytes .topic-list{

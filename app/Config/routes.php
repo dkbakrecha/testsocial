@@ -20,7 +20,7 @@
  * @since         CakePHP(tm) v 0.2.9
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
-Router::connect('/', array('controller' => 'users', 'action' => 'home'));
+Router::connect('/', array('controller' => 'users', 'action' => 'dashboard'));
 Router::connect('/admin', array('controller' => 'users', 'action' => 'login', 'admin' => TRUE));
 Router::connect('/register', array('controller' => 'users', 'action' => 'register'));
 Router::connect('/gkbytes', array('controller' => 'questions', 'action' => 'gkbytes'));

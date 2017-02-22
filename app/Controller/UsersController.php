@@ -8,24 +8,11 @@ class UsersController extends AppController {
 
     public function beforeFilter() {
         parent::beforeFilter();
-        $this->Auth->allow('home', 'register', 'verification', 'admin_login', 'lost_password');
+        $this->Auth->allow('register', 'verification', 'admin_login', 'lost_password');
     }
 
     public function opauth_complete() {
         debug($this->data);
-    }
-
-    public function req_complete() {
-        $authCode = trim($this->request->query("code"));
-
-
-        // Exchange authorization code for access token
-        $accessToken = $this->client->authenticate($authCode);
-        $this->client->setAccessToken($accessToken);
-
-
-        pr($accessToken);
-        prd($oAuthToken);
     }
 
     public function add() {
@@ -57,7 +44,7 @@ class UsersController extends AppController {
 
     public function register() {
         $this->loadModel('EmailContent');
-		$this->set('removeBreadcrumb', 1);
+        $this->set('removeBreadcrumb', 1);
 
         if ($this->request->is('post')) {
             $this->User->create();
@@ -90,25 +77,25 @@ class UsersController extends AppController {
             );
         }
     }
-	
-	public function lost_password() {
+
+    public function lost_password() {
         $this->loadModel('EmailContent');
-		$this->set('removeBreadcrumb', 1);
+        $this->set('removeBreadcrumb', 1);
 
         if ($this->request->is('post')) {
             $this->User->create();
             $data = $this->request->data;
-            
-			$_info = $this->User->getInfo($data['User']['email']);
-			$_info['User']['verification_code'] = substr(md5(microtime()), rand(0, 26), 6);
-			//prd($_info);
-			//prd($this->User->save($_info));
+
+            $_info = $this->User->getInfo($data['User']['email']);
+            $_info['User']['verification_code'] = substr(md5(microtime()), rand(0, 26), 6);
+            //prd($_info);
+            //prd($this->User->save($_info));
             if ($this->User->save($_info)) {
                 $name = $_info['User']['name'];
-				$email = $_info['User']['email'];
+                $email = $_info['User']['email'];
                 $key = $_info['User']['verification_code'];
-                
-				$this->EmailContent->forgetPassword($name, $email, $key);
+
+                $this->EmailContent->forgetPassword($name, $email, $key);
 
                 $this->Session->setFlash(__('Please check your mail for reset password link.'));
                 return $this->redirect(array('action' => 'home'));
@@ -131,7 +118,7 @@ class UsersController extends AppController {
         $data = $this->User->find('first', array(
             'conditions' => array('User.verification_code' => $key),
             'fields' => array('id', 'email', 'status', 'verification_code')
-        ));
+                ));
         // prd($data);
         $saveData = array();
 
@@ -195,7 +182,7 @@ class UsersController extends AppController {
                 'Category.parent_id' => 0,
             ),
             'limit' => 4
-        ));
+                ));
 
         $blogList = $this->Post->find('all', array(
             'conditions' => array(
@@ -204,7 +191,7 @@ class UsersController extends AppController {
             'order' => array('Post.id DESC'),
             'limits' => array('6'),
             'fields' => array('*')
-        ));
+                ));
         //pr($blogList);
 
 
@@ -213,8 +200,8 @@ class UsersController extends AppController {
     }
 
     public function login() {
-		$this->set('removeBreadcrumb', 1);
-		
+        $this->set('removeBreadcrumb', 1);
+
         if (!empty($this->loggedinUser)) {
             $this->redirect(array('controller' => 'users', 'action' => 'dashboard'));
         }
@@ -318,11 +305,11 @@ class UsersController extends AppController {
                 'role' => 2, 'status' => 3)));
 
         /* Notes and Questions */
-        $notes_pending = $this->Note->find('count',array('conditions' => array(
-            'Note.status' => 3)));
+        $notes_pending = $this->Note->find('count', array('conditions' => array(
+                'Note.status' => 3)));
 
-        $question_pending = $this->Question->find('count',array('conditions' => array(
-            'Question.status' => 3)));
+        $question_pending = $this->Question->find('count', array('conditions' => array(
+                'Question.status' => 3)));
 
         $_user_statics['active'] = $_user_active;
         $_user_statics['inactive'] = $_user_inactive;
@@ -341,7 +328,7 @@ class UsersController extends AppController {
             'limit' => 5,
             'order' => array('last_login desc'),
             'fields' => array('email', 'last_login')
-        ));
+                ));
 
         $this->set('lastlogin_list', $_lastlogin_list);
 
@@ -350,7 +337,7 @@ class UsersController extends AppController {
             /* 'conditions' => array(), */
             'limit' => 5,
             'order' => array('Test.id desc'),
-        ));
+                ));
         //pr($_lastTest_list);
         $this->set('lastTest_list', $_lastTest_list);
     }
@@ -403,7 +390,7 @@ class UsersController extends AppController {
                 'order' => $orderby,
                 'limit' => $limit,
                 'offset' => $start
-            ));
+                    ));
 
             $return_result['draw'] = $page;
             $return_result['recordsTotal'] = $total_records;
@@ -481,7 +468,7 @@ class UsersController extends AppController {
             $data['User']['id'] = $this->request->data['id'];
             $userdata = $this->User->find('first', array('conditions' => array(
                     'User.id' => $data['User']['id'])
-            ));
+                    ));
 
             if ($this->request->data['status'] == 2) {
                 $this->loadModel("EmailContent");
@@ -551,7 +538,7 @@ class UsersController extends AppController {
                 'order' => $orderby,
                 'limit' => $limit,
                 'offset' => $start
-            ));
+                    ));
 
             $return_result['draw'] = $page;
             $return_result['recordsTotal'] = $total_records;
