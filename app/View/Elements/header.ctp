@@ -23,39 +23,18 @@ $sessionUser = $this->Session->read('Auth.User');
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'home')); ?>">
-                <?php echo $this->Html->image('The-Most-Complete-Education-Solution.png'); ?>
+            <a class="navbar-brand" href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'dashboard')); ?>">
+                Social
             </a>
         </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <?php
-                if (isset($this->request->params['admin'])) {
-
-                } else {
-                    if (!empty($sessionUser['name'])) {
-                        ?>
-                        <!--<li><a href="<?php echo $this->Html->url(array('controller' => 'categories', 'action' => 'index')); ?>"><i class="fa fa-calculator"></i> Practice Tests</a></li>-->
-                        <!--<li><a href="<?php echo $this->Html->url(array('controller' => 'categories', 'action' => 'index')); ?>"><i class="fa fa-gamepad"></i> Moke Tests</a></li>-->
-                        <!--<li><a href="<?php echo $this->Html->url(array('controller' => 'categories', 'action' => 'index')); ?>"><i class="fa fa-graduation-cap"></i> Leaderboard Tests</a></li>-->
-
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'questions', 'action' => 'index')); ?>"><i class="fa fa-hdd-o"></i> Questions</a></li>
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'notes', 'action' => 'index')); ?>"><i class="fa fa-files-o"></i> Notes</a></li>
-                        <?php
-                    } else {
-                        ?>
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'pages', 'action' => 'aboutus')); ?>"><i class="fa fa-graduation-cap"></i> About Us</a></li>
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'pages', 'action' => 'features')); ?>"><i class="fa fa-desktop"></i> Features</a></li>
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'testimonials', 'action' => 'index'));    ?>"><i class="fa fa-comments-o"></i> Testimonials</a></li>
-                        <!--<li><a href="<?php //echo $this->Html->url(array('controller' => 'faqs', 'action' => 'index'));    ?>"><i class="fa fa-list"></i> FAQ'S</a></li>-->
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'posts', 'action' => 'index')); ?>"><i class="fa fa-files-o"></i> Blog</a></li>
-                                                <li><a href="<?php echo $this->Html->url(array('controller' => 'questions', 'action' => 'gkbytes')); ?>"><i class="fa fa-files-o"></i> GK Bytes</a></li>
-                        <?php
-                    }
-                }
-                ?>
+                <li><a href="<?php echo $this->Html->url(array('controller' => 'feed_urls', 'action' => 'index')); ?>">Add feed url</a></li>
+                <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Add Article</a></li>
+                <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Social Media List</a></li>
+                <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Management Panel</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <?php
@@ -65,7 +44,6 @@ $sessionUser = $this->Session->read('Auth.User');
                     if (empty($sessionUser['name'])) {
                         ?>
                         <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>"><i class="fa fa-lock"></i> Login</a></li>
-                        <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'register')); ?>"><i class="fa fa-user"></i> New Profile</a></li>
                         <?php
                     } else {
                         ?>
