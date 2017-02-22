@@ -1,0 +1,25 @@
+.page-header{
+    border: 0px;
+    margin: 0;
+}
+
+.page-header h1{
+    font-size: 22px;
+}
+
+.dataTables_paginate.paging_simple_numbers{
+    text-align: right;
+}
+
+
+.clr-red{
+    color: #FF0033;
+}
+
+.clr-green{
+    color: #99CC00;
+}
+
+.clr-orange{
+    color: #FFCC00;
+}
