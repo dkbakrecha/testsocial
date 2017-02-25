@@ -83050,3 +83050,30 @@ Request URL: /testsocial/js/jquery.min.map
 Stack Trace:
 #0 C:\xampp\htdocs\testsocial\app\webroot\index.php(108): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
 #1 {main}
+2017-02-22 18:31:30 Error: [MissingControllerException] Controller class JsController could not be found.
+Exception Attributes: array (
+  'class' => 'JsController',
+  'plugin' => NULL,
+)
+Request URL: /testsocial/js/jquery.min.map
+Stack Trace:
+#0 C:\xampp\htdocs\testsocial\app\webroot\index.php(108): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#1 {main}
+2017-02-22 18:32:52 Error: [MissingControllerException] Controller class JsController could not be found.
+Exception Attributes: array (
+  'class' => 'JsController',
+  'plugin' => NULL,
+)
+Request URL: /testsocial/js/jquery.min.map
+Stack Trace:
+#0 C:\xampp\htdocs\testsocial\app\webroot\index.php(108): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#1 {main}
+2017-02-22 18:40:39 Error: [MissingControllerException] Controller class JsController could not be found.
+Exception Attributes: array (
+  'class' => 'JsController',
+  'plugin' => NULL,
+)
+Request URL: /testsocial/js/jquery.min.map
+Stack Trace:
+#0 C:\xampp\htdocs\testsocial\app\webroot\index.php(108): Dispatcher->dispatch(Object(CakeRequest), Object(CakeResponse))
+#1 {main}
