@@ -17,6 +17,8 @@
             'bootstrap/bootstrap.min',
             'fullcalendar.min',
             'fullcalendar.print',
+            'bootstrap-datepicker.css',
+            'jquery.timepicker.css',
             '/js/iCheck/all',
             'fontawesome/font-awesome.min',
             'site_ui',
@@ -32,6 +34,8 @@
             'fullcalendar.min',
             'lib/jquery-ui.custom.min',
             'iCheck/icheck.min',
+            'bootstrap-datepicker.js',
+            'jquery.timepicker.js',
             'admin/jquery.dataTables.min',
             'admin/dataTables.bootstrap.min',
         ));
@@ -65,9 +69,9 @@
 
         <?php
         if (!isset($this->request->params['admin'])) {
-            echo $this->element('social');
+            //echo $this->element('social');
             echo $this->element('footer');
-            echo $this->element('_site_js');
+            //echo $this->element('_site_js');
         }
         //echo $this->element('sql_dump');
         ?>

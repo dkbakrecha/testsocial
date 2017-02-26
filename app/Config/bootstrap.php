@@ -143,3 +143,8 @@ Configure::write('Linkedin', array(
 	'CONSUMER_KEY' => '81c8c20uefuszw',
 	'CONSUMER_SECRET' => '4mWgPD5kGBneI12f',
 ));
+
+Configure::write('Facebook', array(
+	'CONSUMER_KEY' => '1782895625274948',
+	'CONSUMER_SECRET' => '650aa2c49dc2bc9cd2bb1be2ab3c15de',
+));

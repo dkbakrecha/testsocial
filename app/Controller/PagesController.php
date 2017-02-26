@@ -103,7 +103,7 @@ class PagesController extends AppController {
         $this->loadModel('EmailContent');
         if ($this->request->is('post')) {
             $data = $this->request->data;
-//prd($data);
+            //prd($data);
             $this->Contact->create($data);
             if ($this->Contact->validates()) {
                 $this->Contact->save();

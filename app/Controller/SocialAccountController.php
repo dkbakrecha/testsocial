@@ -3,6 +3,7 @@
 App::uses('AppController', 'Controller');
 App::import('Vendor', 'OAuth');
 App::import('Vendor', 'twitteroauth');
+App::import('Vendor', 'linkedin');
 
 class SocialAccountController extends AppController {
 
@@ -37,6 +38,8 @@ class SocialAccountController extends AppController {
 					$linkedinConnect = $this->linkedinConnect();
 					prd($linkedinConnect);
 				}elseif($saveAccount['SocialAccount']['social_type'] == 3){
+
+					$this->fbConnect();
 
 				}elseif($saveAccount['SocialAccount']['social_type'] == 4){
 
@@ -123,13 +126,37 @@ class SocialAccountController extends AppController {
 		    //$access_token = curl_post($accessToken_url, $postQueryStr);
 
 		    $response = $this->curlHttpRequest($accessToken_url, $req_type, $postParameters, $request_config);
-
+		    pr($response);
 		    if(isset($response['data']) && !empty($response['data'])){
 		    	$saveAccount = $this->Session->read('SocialAccount');
-			    //$saveAccount['SocialAccount']['social_unique_id'] = $response['data'];
-			    $saveAccount['SocialAccount']['access_token'] = json_encode($response['data']);
 
-			    $this->SocialAccount->save($saveAccount);
+		    	$responseDecode = json_decode($response['data'],true);
+
+		    	$profileApiUrl = 'https://api.linkedin.com/v1/people/~?format=json';
+		    	$req_type1 = 'GET';
+		    	
+		    	$header = array();
+				$header[] = 'Content-type: application/json';
+				$header[] = 'Authorization: Bearer '.$responseDecode['access_token'];
+
+		    	$request_config = array(
+		    		CURLOPT_SSL_VERIFYHOST => 0,
+		    		CURLOPT_SSL_VERIFYPEER => 0,
+		    		CURLOPT_HTTPHEADER => $header,
+		    	);
+
+		    	$postParameters = array();
+
+				$userInfoResponse = $this->curlHttpRequest($profileApiUrl, $req_type1, $postParameters, $request_config);
+				//prd($userInfo);
+
+				if(isset($userInfoResponse['data']) && !empty($userInfoResponse['data'])){
+					$userInfoResponseDecoded = json_decode($userInfoResponse['data'], true);
+					$saveAccount['SocialAccount']['social_unique_id'] = $userInfoResponseDecoded['id'];
+				    $saveAccount['SocialAccount']['access_token'] = $response['data'];
+
+				    $this->SocialAccount->save($saveAccount);
+				}
 		    }
 
 		    $this->redirect('account_list');
@@ -152,7 +179,73 @@ class SocialAccountController extends AppController {
 	}
 
 	public function fbConnect(){
+		$fbConsumer = Configure::read('Facebook');
+		$redirect_uri = Router::url('fbCallback',true);
 
+		$uniqeKey = md5(uniqid(rand(), TRUE)); // CSRF protection
+		$this->Session->write('_fbState', $uniqeKey);
+
+		$fbDialogAuthUrl = 'https://www.facebook.com/dialog/oauth';
+		$req_type = 'GET';
+		$getParameters = array(
+			'client_id' => $fbConsumer['CONSUMER_KEY'],
+			'redirect_uri' => $redirect_uri,
+			'state' => $uniqeKey,
+			'scope' => array('email', 'public_profile', 'manage_pages', 'publish_pages', 'publish_actions'),
+		);
+
+		$url = $fbDialogAuthUrl.'?'.http_build_query($getParameters);
+		//prd($url);
+		header("Location:".$url);
+		exit;
+	}
+
+	public function fbCallback(){
+		$fbConsumer = Configure::read('Facebook');
+		$redirect_uri = Router::url('fbCallback',true);
+
+		if(isset($_REQUEST['code']) && !empty($_REQUEST['code'])){
+			$code = $_REQUEST['code'];
+			$token_url = "https://graph.facebook.com/oauth/access_token";
+			$req_type = 'POST';
+	  		$postParameters = array(
+	  			'client_id' => $fbConsumer['CONSUMER_KEY'],
+	  			'client_secret' => $fbConsumer['CONSUMER_SECRET'],
+	  			'redirect_uri' => $redirect_uri,
+	  			'code' => $code,
+	  		);
+
+	  		$request_config = array(
+	  			CURLOPT_SSL_VERIFYHOST => 0,
+		    	CURLOPT_SSL_VERIFYPEER => 0,
+	  		);
+
+			$response = $this->curlHttpRequest($token_url, $req_type, $postParameters, $request_config);
+
+			if(isset($response['data']) && !empty($response['data'])){
+				parse_str($response['data'], $access_token);
+				pr($access_token);
+
+				$graph_url = "https://graph.facebook.com/me?access_token=". $access_token['access_token'];
+				$user = json_decode(file_get_contents($graph_url),true);
+				
+				if(isset($user['id']) && !empty($user['id'])){
+					$saveAccount = $this->Session->read('SocialAccount');
+					
+					$saveAccount['SocialAccount']['social_unique_id'] = $user['id'];
+				    $saveAccount['SocialAccount']['access_token'] = $access_token['access_token'];
+
+				    $this->SocialAccount->save($saveAccount);
+				}
+
+				//prd($user);
+
+				$this->redirect('account_list');
+			}
+
+		}else{
+			$this->redirect('add_account');
+		}
 	}
 
 	public function googleConnect(){
