@@ -142,5 +142,4 @@ Configure::write('Twitter', array(
 Configure::write('Linkedin', array(
 	'CONSUMER_KEY' => '81c8c20uefuszw',
 	'CONSUMER_SECRET' => '4mWgPD5kGBneI12f',
-	'callback_url' => ''
 ));

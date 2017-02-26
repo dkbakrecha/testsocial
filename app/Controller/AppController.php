@@ -330,4 +330,59 @@ class AppController extends Controller {
         return $token;
     }
 
+
+    /**
+     * curlHttpRequest used to make different types of http request with curl
+     * @param $req_type String ['post','get','put']
+     * @param $params Array Parameters to send with request
+     * @param $req_config Array Request additionally configuration parameters
+     * 
+     * @return $response 
+    **/
+    public function curlHttpRequest($url, $req_type='GET', $params=array(), $req_config = array()){
+        $ch = curl_init();      
+
+        $queryString = '';
+
+        //check for parameters for GET request type
+        if(strtolower($req_type) == 'get' && !empty($params)){
+            $queryString = '?'.http_build_query($params);
+        }elseif (strtolower($req_type) == 'post' && !empty($params)) {
+          curl_setopt($ch, CURLOPT_POST, 1);
+          curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+        }
+
+        curl_setopt($ch, CURLOPT_URL,$url);
+
+        if(!empty($req_config)){
+            curl_setopt_array($ch, $req_config);
+        }
+
+        /*curl_setopt($ch, CURLOPT_POST, 1);
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $queryString);*/
+
+        // in real life you should use something like:
+        // curl_setopt($ch, CURLOPT_POSTFIELDS, 
+        //          http_build_query(array('postvar1' => 'value1')));
+
+        // receive server response ...
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $server_output = curl_exec ($ch);
+        
+        //check curl output
+        if(isset($server_output) && !empty($server_output)){
+            $response['error'] = 0;
+            $response['data'] = $server_output;
+        }else{
+            $response['error'] = curl_errno($ch);
+            $response['error_detail'] = curl_error($ch);
+        }
+
+        curl_close ($ch);
+        return $response;
+    }    
 }

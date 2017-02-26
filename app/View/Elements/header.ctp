@@ -33,7 +33,7 @@ $sessionUser = $this->Session->read('Auth.User');
             <ul class="nav navbar-nav">
                 <li><a href="<?php echo $this->Html->url(array('controller' => 'feed_urls', 'action' => 'index')); ?>">Add feed url</a></li>
                 <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Add Article</a></li>
-                <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Social Media List</a></li>
+                <li><a href="<?php echo $this->Html->url(array('controller' => 'social_account', 'action' => 'account_list')); ?>">Social Media List</a></li>
                 <li><a href="<?php echo $this->Html->url(array('controller' => 'users', 'action' => 'login')); ?>">Management Panel</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">

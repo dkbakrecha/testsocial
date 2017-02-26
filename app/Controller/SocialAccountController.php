@@ -34,6 +34,8 @@ class SocialAccountController extends AppController {
 
 				}elseif($saveAccount['SocialAccount']['social_type'] == 2){
 
+					$linkedinConnect = $this->linkedinConnect();
+					prd($linkedinConnect);
 				}elseif($saveAccount['SocialAccount']['social_type'] == 3){
 
 				}elseif($saveAccount['SocialAccount']['social_type'] == 4){
@@ -74,7 +76,7 @@ class SocialAccountController extends AppController {
 
 		    $this->SocialAccount->save($saveAccount);
 
-		    $this->redirect('add_account');
+		    $this->redirect('account_list');
 
 		}else{
 
@@ -97,6 +99,64 @@ class SocialAccountController extends AppController {
 		}
 
 		return false;
+	}
+
+	public function linkedinConnect(){
+		$linkedinConsumer = Configure::read('Linkedin');
+		
+		if(isset($_GET['code'])){
+
+		    $accessToken_url = 'https://www.linkedin.com/oauth/v2/accessToken';
+		    $req_type = 'POST';
+		    $postParameters = http_build_query([
+		        'grant_type' => 'authorization_code',
+		        'code' => $_GET['code'],
+		        'redirect_uri' => Router::url('/social_account/linkedinConnect',true),
+		        'client_id' => $linkedinConsumer['CONSUMER_KEY'],
+		        'client_secret' => $linkedinConsumer['CONSUMER_SECRET'],
+		    ]);
+
+		    $request_config = array(
+		    	CURLOPT_SSL_VERIFYHOST => 0,
+		    	CURLOPT_SSL_VERIFYPEER => 0,
+		    );
+		    //$access_token = curl_post($accessToken_url, $postQueryStr);
+
+		    $response = $this->curlHttpRequest($accessToken_url, $req_type, $postParameters, $request_config);
+
+		    if(isset($response['data']) && !empty($response['data'])){
+		    	$saveAccount = $this->Session->read('SocialAccount');
+			    //$saveAccount['SocialAccount']['social_unique_id'] = $response['data'];
+			    $saveAccount['SocialAccount']['access_token'] = json_encode($response['data']);
+
+			    $this->SocialAccount->save($saveAccount);
+		    }
+
+		    $this->redirect('account_list');
+
+		}else{
+		    //getAuthorizationCode();
+		    $params = array(
+		        'response_type' => 'code',
+		        'client_id' => $linkedinConsumer['CONSUMER_KEY'],
+		        //'scope' => SCOPE,
+		        'state' => uniqid('', true), // unique long string
+		        'redirect_uri' => Router::url('/social_account/linkedinConnect',true),
+		    );
+
+		    $url = 'https://www.linkedin.com/oauth/v2/authorization?'.http_build_query($params);
+		    header("Location:".$url);
+		}
+
+		return false;
+	}
+
+	public function fbConnect(){
+
+	}
+
+	public function googleConnect(){
+		
 	}
 
 	public function account_list(){
