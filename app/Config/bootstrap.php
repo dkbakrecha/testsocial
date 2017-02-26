@@ -133,3 +133,14 @@ CakePlugin::loadAll(array(
 	'Ratings' => array(),
     'ContactManager' => array('bootstrap' => true, 'routes' => true),
 ));
+
+Configure::write('Twitter', array(
+	'CONSUMER_KEY' => '62EVTmuPhPtRxE1fekATJfJlW',
+	'CONSUMER_SECRET' => 'bP52mDeSijtGsoOWw4L2M1m3nQCn8K04zyV52Y6cxd9uLZtPs6',
+));
+
+Configure::write('Linkedin', array(
+	'CONSUMER_KEY' => '81c8c20uefuszw',
+	'CONSUMER_SECRET' => '4mWgPD5kGBneI12f',
+	'callback_url' => ''
+));
