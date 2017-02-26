@@ -22,6 +22,7 @@
             '/js/iCheck/all',
             'fontawesome/font-awesome.min',
             'site_ui',
+            'dataTable_custom',
             'some_admin',
         ));
 
