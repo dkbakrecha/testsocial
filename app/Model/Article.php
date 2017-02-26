@@ -20,8 +20,6 @@
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-App::uses('Model', 'Model');
-
 /**
  * Application model for Cake.
  *
@@ -30,8 +28,17 @@ App::uses('Model', 'Model');
  *
  * @package       app.Model
  */
+App::uses('AppModel', 'Model');
+
 class Article extends AppModel {
-	public $validate = array(
+
+    public $validate = array(
+        'guid' => array(
+            'isUnique' => array(
+                'rule' => 'isUnique',
+                'message' => 'This id ready exist already exists.'
+            ),
+        ),
         'title' => array(
             'required' => array(
                 'rule' => array('notEmpty'),
@@ -44,20 +51,6 @@ class Article extends AppModel {
                 'message' => 'This field is required.'
             ),
         )
-    );
-}
-
-App::uses('AppModel', 'Model');
-
-class Article extends AppModel {
-
-    public $validate = array(
-        'guid' => array(
-            'isUnique' => array(
-                'rule' => 'isUnique',
-                'message' => 'This id ready exist already exists.'
-            ),
-        ),
     );
 
     public function getInfo($email) {
