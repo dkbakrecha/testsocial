@@ -18,15 +18,31 @@
                             <th><?= __('Status'); ?></th>
                             <th><?= __('ACTION'); ?></th>
                         </tr>
+                    </thead>
+                    <tfoot>
                         <tr class="filter">
                             <th width="5%"></th>    
                             <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Name" name="name"></th>
-                            <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Social Type" name="social_type"></th>    
+                            <th width="20%">
+                                <select class="search_init" name="social_type">
+                                    <option value="">Select Social Type</option>
+                                    <option value="1">Twitter</option>
+                                    <option value="2">Linkedin</option>
+                                    <option value="3">Facebook</option>
+                                    <option value="4">Google</option>
+                                </select>
+                            </th>    
                             <th width="15%"><input class="search_init" type="text" value="" placeholder="Search By Feed " name="feed_url"></th>    
-                            <th width="5%"></th>    
+                            <th width="5%">
+                                <select class="search_init" name="social_type">
+                                    <option value="">Select Status</option>
+                                    <option value="0">Connection Expire</option>
+                                    <option value="1">Active</option>
+                                </select>
+                            </th>    
                             <th width="10%"></th>    
-                        </tr>Url
-                    </thead>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -73,6 +89,7 @@
                     "name": "SocialAccount.status",
                     "data": "status",
                     "className": 'align-center',
+                    "searchable": true,
                 },
                 {
                     "data": "action",
@@ -100,14 +117,10 @@
             //console.log("asd");
             var tbl = table.api();
             tbl.columns().eq(0).each(function (colIdx) {
-                console.log(colIdx);
-                console.log(tbl);
-                console.log(tbl.column(colIdx).length);
-
-                if ($('input,select', tbl.column(colIdx).length)) {
+                if ($('input,select', tbl.column(colIdx).footer().length)) {
                     tbl
                     .column(colIdx)
-                    .search($('input,select', tbl.column(colIdx)).val());
+                    .search($('input,select', tbl.column(colIdx).footer()).val());
                 }
             });
             tbl.draw();

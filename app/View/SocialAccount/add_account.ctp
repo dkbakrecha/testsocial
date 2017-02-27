@@ -46,10 +46,15 @@
 
         <div class="box-bottom-butngroup">
             <?php echo $this->Form->submit('save', array('class' => 'box-submitbtn', 'div' => false)); ?>
-            <?php echo $this->Form->button('cancel', array('class' => 'box-cancelbtn')); ?>
+            <?php echo $this->Form->button('cancel', array('class' => 'box-cancelbtn', 'onClick' => 'return goBack();')); ?>
         </div>
         <?php
         echo $this->Form->end();
         ?>
     </div>
 </div>
+<script type="text/javascript">
+    function goBack(){
+        window.location.href = "<?php echo Router::url('account_list', true); ?>";
+    }
+</script>

@@ -1,26 +1,31 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <div class="row">
-            <div class="form-inline col-lg-5" >
+            <div class="form-inline col-lg-12" >
                 <?php
-                echo $this->Form->create('FeedUrl', array("role" => "form", 'enctype' => 'multipart/form-data'));
+                echo $this->Form->create('FeedUrl', array("role" => "form", 'enctype' => 'multipart/form-data', 'class' => 'form-inline'));
                 ?>  
-
+                <div class="form-group">
+                    <label><strong>Add New RSS Feed Url</strong>&nbsp;&nbsp;</label>
+                </div>
                 <div class="form-group">
                     <?php
                     echo $this->Form->input('title', array(
                         'class' => 'form-control',
-                        'label' => 'New Feed Url',
+                        'label' => false,
                         'placeholder' => 'Title',
                         'div' => false
                     ));
-
-                    echo $this->Form->input('rss_url', array(
-                        'class' => 'form-control',
-                        'label' => false,
-                        'placeholder' => 'RSS Url',
-                        'div' => false
-                    ));
+                    ?>
+                </div>
+                <div class="form-group">
+                    <?php
+                        echo $this->Form->input('rss_url', array(
+                            'class' => 'form-control',
+                            'label' => false,
+                            'placeholder' => 'RSS Url',
+                            'div' => false
+                        ));
                     ?>
                 </div>
 
@@ -44,8 +49,8 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th><?= __('FULL NAME'); ?></th>
-                            <th><?= __('EMAIL ADDRESS'); ?></th>
+                            <th><?= __('Title'); ?></th>
+                            <th><?= __('Feed Url'); ?></th>
                             <th><?= __('DATE CREATED'); ?></th>
                             <th><?= __('ACTION'); ?></th>
                         </tr>
@@ -53,8 +58,8 @@
                     <tfoot>
                         <tr class="filter">
                             <th width="5%"></th>    
-                            <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Name" name="answer"></th>
-                            <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Email address" name="email"></th>    
+                            <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Title" name="answer"></th>
+                            <th width="20%"><input class="search_init" type="text" value="" placeholder="Search By Feed Url" name="email"></th>    
                             <th width="15%"></th>    
                             <th width="5%"></th>    
                         </tr>

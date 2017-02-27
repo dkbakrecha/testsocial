@@ -594,4 +594,41 @@ class UsersController extends AppController {
         }
     }
 
+    public function tool_setting(){
+        $this->loadModel('ToolSetting');
+        $toolsetting = $this->ToolSetting->find('all', array(
+                'conditions' => array(
+                    'visibility' => 1,
+                )
+            )
+        );
+
+        $this->set(compact('toolsetting'));
+        if($this->request->is('post') || $this->request->is('put')){
+            $postData = $this->request->data;
+            if(isset($postData['ToolSetting']) && !empty($postData['ToolSetting'])){
+                
+                foreach ($postData['ToolSetting'] as $setting_key => $setting_value) {
+                    $tool_setting_db = $this->ToolSetting->find('first', array(
+                            'conditions' => array(
+                                'setting_key' => $setting_key,
+                            ),
+                        )
+                    );
+
+                    if(isset($tool_setting_db['ToolSetting']) && !empty($tool_setting_db['ToolSetting'])){
+                        $updToolSetting = array();
+                        $updToolSetting['ToolSetting']['id'] = $tool_setting_db['ToolSetting']['id'];
+                        $updToolSetting['ToolSetting']['setting_value'] = $setting_value;
+
+                        $this->ToolSetting->save($updToolSetting);
+                    }
+
+                }
+
+                $this->redirect('tool_setting');
+            }
+        }
+    }
+
 }

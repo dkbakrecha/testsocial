@@ -5,6 +5,29 @@
 	#scrapeMsg{
 		color: red;
 	}
+
+    .label-width-100-per{
+        width: 100%;
+    }
+
+    .twitter-account-container .checkbox, .linkedin-account-container .checkbox, .fb-account-container .checkbox, .google-account-container .checkbox{
+        width: auto;
+        display: inline-block;
+        padding-right: 15px;
+    }
+
+    .twitter-account-container .checkbox label, .linkedin-account-container .checkbox label, .fb-account-container .checkbox label, .google-account-container .checkbox label{
+        margin-left: 6px;
+        padding-left: 0px;
+    }
+
+    .twitter-account-container .checkbox input[type="checkbox"], .linkedin-account-container .checkbox input[type="checkbox"], .fb-account-container .checkbox input[type="checkbox"], .google-account-container .checkbox input[type="checkbox"]{
+        position: inherit;
+        margin-left: 0px;
+
+    }
+
+
 </style>
 <div class="box">
     <div class="box-header">
@@ -23,8 +46,10 @@
         <div class="row">
             <div class="col-lg-6">
                 <?php 
-                	echo $this->Form->input('article_url', array(
+                	echo $this->Form->input('link', array(
                 			'type' => 'text',
+                            'id' => 'ArticleArticleUrl',
+                            'label' => 'Article Url',
                 		)
                 	); 
                 ?>
@@ -111,39 +136,95 @@
                 ?>
             </div>
         </div>
-        <br/><br/><br/>
-        <?php /* ?>
-        <div class="row">
+        <?php if(isset($twitterAccount) && !empty($twitterAccount)){?>
+        <div class="row twitter-account-container">
             <div class="col-lg-6">
                 <?php 
-                    echo $this->Form->input('rss_feed_url', array(
+                    /*echo $this->Form->input('email_warning_chb', array('type'=>'select', 'multiple'=>'checkbox', 'label'=> __('Email notice'), 'class'=>'multiple-chb', 'options'=> array('title...'=>array( '5'=>'5 days', '15'=>'15 days', '30'=>'30 days', '60'=>'60 days');*/
+
+                    echo $this->Form->input('twitter_account',array(
+                            'id' => 'twitter-account',
                             'type' => 'select',
-                            'options' => $feed_data,
-                            'empty' => 'Select Feed Url'
+                            'label' => [
+                                'text' => 'Twitter Account',
+                                'class' => 'label-width-100-per',
+                            ],
+                            'multiple' => 'checkbox',
+                            'options' => $twitterAccount,
+                            'selected' => $selectedTwitterAcc
                         )
                     ); 
                 ?>
             </div>
         </div>
+        <?php }?>
 
-        <div class="row">
+        <?php if(isset($linkedinAccount) && !empty($linkedinAccount)){?>
+        <div class="row linkedin-account-container">
             <div class="col-lg-6">
                 <?php 
-                    $social_type = array(1 => 'Twitter', 'LinkedIn', 'Facebook', 'Google');
-                    echo $this->Form->input('social_type', array(
+                    echo $this->Form->input('linkedin_account',array(
+                            'id' => 'linkedin-account',
                             'type' => 'select',
-                            'options' => $social_type,
-                            'empty' => 'Select Social Type'
+                            'label' => [
+                                'text' => 'LinkedIn Account',
+                                'class' => 'label-width-100-per',
+                            ],
+                            'multiple' => 'checkbox',
+                            'options' => $linkedinAccount,
+                            'selected' => $selectedLinkedinAcc
                         )
                     ); 
                 ?>
             </div>
         </div>
+        <?php }?>
 
-        <?php */?>
+        <?php if(isset($fbAccount) && !empty($fbAccount)){?>
+        <div class="row fb-account-container">
+            <div class="col-lg-6">
+                <?php 
+                    echo $this->Form->input('fb_account',array(
+                            'id' => 'fb-account',
+                            'type' => 'select',
+                            'label' => [
+                                'text' => 'Facebook Account',
+                                'class' => 'label-width-100-per',
+                            ],
+                            'multiple' => 'checkbox',
+                            'options' => $fbAccount,
+                            'selected' => $selectedFbAcc
+                        )
+                    ); 
+                ?>
+            </div>
+        </div>
+        <?php } ?>
+
+        <?php if(isset($googleAccount) && !empty($googleAccount)){?>
+        <div class="row google-account-container">
+            <div class="col-lg-6">
+                <?php 
+                    echo $this->Form->input('google_account',array(
+                            'id' => 'google-account',
+                            'type' => 'select',
+                            'label' => [
+                                'text' => 'Google Account',
+                                'class' => 'label-width-100-per',
+                            ],
+                            'multiple' => 'checkbox',
+                            'options' => $googleAccount,
+                            'selected' => $selectedGoogleAcc
+                        )
+                    ); 
+                ?>
+            </div>
+        </div>
+        <?php } ?>
+        <br/><br/>
+        
         <div class="box-bottom-butngroup">
             <?php echo $this->Form->submit('save', array('class' => 'box-submitbtn', 'div' => false)); ?>
-            <?php echo $this->Form->button('cancel', array('class' => 'box-cancelbtn')); ?>
         </div>
         <?php
         echo $this->Form->end();

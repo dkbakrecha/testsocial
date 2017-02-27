@@ -13,8 +13,37 @@ class ArticlesController extends AppController {
     }
 
     public function add(){
+        $this->loadModel('SocialAccount');
+        $twitterAccount = $this->SocialAccount->find('list', array(
+                'conditions' => array('social_type' => 1),
+                'fields' => array('id', 'Name'),
+            )
+        );
+
+        $linkedinAccount = $this->SocialAccount->find('list', array(
+                'conditions' => array('social_type' => 2),
+                'fields' => array('id', 'Name'),
+            )
+        );
+
+        $fbAccount = $this->SocialAccount->find('list', array(
+                'conditions' => array('social_type' => 3),
+                'fields' => array('id', 'Name'),
+            )
+        );
+
+        $googleAccount = $this->SocialAccount->find('list', array(
+                'conditions' => array('social_type' => 4),
+                'fields' => array('id', 'Name'),
+            )
+        );
+
+        $this->set(compact('twitterAccount', 'linkedinAccount', 'fbAccount', 'googleAccount'));
+
     	if($this->request->is('post')){
     		$postData = $this->request->data;
+
+            prd($postData);
 
             if(isset($postData['Article']['schedule_date']) && !empty($postData['Article']['schedule_date'])){
                 $postData['Article']['schedule_date'] = date('Y-m-d',strtotime($postData['Article']['schedule_date']));
@@ -104,7 +133,14 @@ class ArticlesController extends AppController {
                 $this->request->data['Article'] = $postData['Article'];
                 $this->Session->setFlash("Please fill all required fields.", 'flash_error');
             }
-    	}
+    	}else{
+            $selectedTwitterAcc = array_keys($twitterAccount);
+            $selectedLinkedinAcc = array_keys($linkedinAccount);
+            $selectedFbAcc = array_keys($fbAccount);
+            $selectedGoogleAcc = array_keys($googleAccount);
+        }
+
+        $this->set(compact('selectedTwitterAcc', 'selectedLinkedinAcc', 'selectedFbAcc', 'selectedGoogleAcc'));
     }
 
     public function getHtml(){    	
@@ -241,5 +277,211 @@ class ArticlesController extends AppController {
 
     	echo json_encode($response);
     	exit;
+    }
+
+    public function lists(){
+        $this->set('title_for_layout', 'Manage Article');
+    }
+
+    public function article_grid(){
+        
+        $this->layout = 'ajax';
+
+        $request = $this->request;
+        $data = $request->data;
+
+        $start = $data['start'];
+        $limit = $data['length'];
+
+        $colName = $request->data['order'][0]['column'];
+        $orderby[$request->data['columns'][$colName]['name']] = $request->data['order'][0]['dir'];
+
+        $condition = array();
+        $condition['Article.status !='] = 2;
+
+        if (isset($request->data['columns'])) {
+            foreach ($request->data['columns'] as $column) {
+                if (isset($column['searchable']) && $column['searchable'] == 'true') {
+                    if (isset($column['name']) && $column['search']['value'] != '') {
+                        $condition[$column['name'] . ' LIKE '] = '%' . filter_var($column['search']['value']) . '%';
+                    }
+                }
+            }
+        }
+        
+        $fields = array('*');
+
+        $joins = array(
+            array(
+                'table' => 'feed_urls',
+                'alias' => 'FeedUrl',
+                'type' => 'INNER',
+                'conditions'=> array(
+                    'Article.feed_id = FeedUrl.id', 
+                )
+            ),
+        );
+
+        //prd($condition);
+        $query = $this->Article->find('all', array(
+            'conditions' => $condition,
+            'joins' => $joins,
+            'fields' => $fields,
+            'order' => $orderby,
+            'limit' => $limit,
+            'offset' => $start
+                ));
+        //prd($query);
+        $total_records = $this->Article->find('count', array('conditions' => $condition, 'joins' => $joins));
+
+        $dataResult = [];
+        $totalRecords = $total_records;
+        $sr_no = $start;
+        $siteUrl = Router::url('/',true);
+        foreach ($query as $row) {
+
+            $action = '<a href="'.$siteUrl.'articles/delete/'.$row['Article']['id'].'">Delete</a>&nbsp;&nbsp;';
+
+
+            $d['sr_no'] = ++$sr_no;
+            $d['title'] = $row['Article']['title'];
+            $d['feed_url'] = $row['FeedUrl']['title'];
+            $d['created_on'] = '-';
+            $d['action'] = $action;
+
+            $dataResult[] = $d;
+        }
+        //prd($dataResult);
+        $returnData = [
+            'draw' => $data['draw'],
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $dataResult
+        ];
+        echo json_encode($returnData);
+        exit;
+
+    }
+
+    public function shared_log(){
+        $this->set('title_for_layout', 'Shared Article Log');
+    }
+
+    public function shared_grid(){
+        $this->layout = 'ajax';
+        $this->loadModel('SharedLog');
+
+        $request = $this->request;
+        $data = $request->data;
+
+        $start = $data['start'];
+        $limit = $data['length'];
+
+        $colName = $request->data['order'][0]['column'];
+        $orderby[$request->data['columns'][$colName]['name']] = $request->data['order'][0]['dir'];
+
+        $condition = array();
+
+        if (isset($request->data['columns'])) {
+            foreach ($request->data['columns'] as $column) {
+                if (isset($column['searchable']) && $column['searchable'] == 'true') {
+                    if (isset($column['name']) && $column['search']['value'] != '') {
+                        $condition[$column['name'] . ' LIKE '] = '%' . filter_var($column['search']['value']) . '%';
+                    }
+                }
+            }
+        }
+        
+        $fields = array('*');
+
+        $joins = array(
+            array(
+                'table' => 'feed_urls',
+                'alias' => 'FeedUrl',
+                'type' => 'INNER',
+                'conditions'=> array(
+                    'SharedLog.feed_url_id = FeedUrl.id', 
+                )
+            ),
+            array(
+                'table' => 'articles',
+                'alias' => 'Article',
+                'type' => 'INNER',
+                'conditions'=> array(
+                    'SharedLog.article_id = Article.id', 
+                )
+            ),
+            array(
+                'table' => 'social_accounts',
+                'alias' => 'SocialAccount',
+                'type' => 'INNER',
+                'conditions'=> array(
+                    'SharedLog.social_account_id = SocialAccount.id', 
+                )
+            ),
+        );
+
+        //prd($condition);
+        $query = $this->SharedLog->find('all', array(
+            'conditions' => $condition,
+            'joins' => $joins,
+            'fields' => $fields,
+            'order' => $orderby,
+            'limit' => $limit,
+            'offset' => $start
+                ));
+        //prd($query);
+        $total_records = $this->SharedLog->find('count', array('conditions' => $condition, 'joins' => $joins));
+
+        $dataResult = [];
+        $totalRecords = $total_records;
+        $sr_no = $start;
+        $siteUrl = Router::url('/',true);
+        foreach ($query as $row) {
+
+            $social_type = '-';
+            if(isset($row['SharedLog']['social_type']) && !empty($row['SharedLog']['social_type'])){
+                if($row['SharedLog']['social_type'] == 1){
+                    $social_type = 'Twitter';
+                }elseif($row['SharedLog']['social_type'] == 2){
+                    $social_type = 'LinkedIn';
+                }elseif($row['SharedLog']['social_type'] == 3){
+                    $social_type = 'Facebook';
+                }elseif($row['SharedLog']['social_type'] == 4){
+                    $social_type = 'Google';
+                }
+            }
+
+            $share_status = '-';
+            if(isset($row['SharedLog']['share_status']) && !empty($row['SharedLog']['share_status'])){
+                if($row['SharedLog']['share_status'] == 1){
+                    $share_status = 'Shared';
+                }elseif($row['SharedLog']['share_status'] == 2){
+                    $share_status = 'Sheduled';
+                }elseif($row['SharedLog']['share_status'] == 3){
+                    $share_status = 'Error';
+                }
+            }
+
+
+            $d['sr_no'] = ++$sr_no;
+            $d['feed_title'] = $row['FeedUrl']['title'];
+            $d['article_title'] = $row['Article']['title'];
+            $d['shared_on'] = $row['SocialAccount']['name'];
+            $d['social_type'] = $social_type;
+            $d['status'] = $share_status;
+            $d['updated'] = date('d-m-Y',strtotime($row['SharedLog']['updated']));
+
+            $dataResult[] = $d;
+        }
+        //prd($dataResult);
+        $returnData = [
+            'draw' => $data['draw'],
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $dataResult
+        ];
+        echo json_encode($returnData);
+        exit;       
     }
 }

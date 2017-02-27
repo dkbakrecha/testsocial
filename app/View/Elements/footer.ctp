@@ -4,7 +4,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <p class="copyright">
-                        &copy; <?php echo date('Y'); ?> : CUPCHERRY.COM 
+                        &copy; <?php echo date('Y'); ?> 
                     </p> 
                 </div>
             </div>

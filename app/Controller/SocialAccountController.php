@@ -59,6 +59,120 @@ class SocialAccountController extends AppController {
 		$this->set(compact('feed_data'));
 	}
 
+	public function edit_account($id){
+		$this->loadModel('FeedUrl');
+		$this->FeedUrl->virtualFields['titleUrl'] = 'CONCAT(title, "( ", rss_url, " )")';
+
+		if(empty($id)){
+			$this->Session->setFlash(__('Account you are try to access does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+			$this->redirect(array('action' => 'account_list'));
+		}
+
+		$this->SocialAccount->id = $id;
+		if($this->SocialAccount->exists()){
+
+			$socialAcountData = $this->SocialAccount->find('first', array(
+					'conditions' => array('id' => $id),
+				)
+			);
+
+			if($this->request->is('post')){
+				$postData = $this->request->data;
+				$saveAccount['SocialAccount']['id'] = $id;
+				$saveAccount['SocialAccount']['name'] = $postData['SocialAccount']['name'];
+				$saveAccount['SocialAccount']['social_type'] = $socialAcountData['SocialAccount']['social_type'];
+				$saveAccount['SocialAccount']['rss_feed_url'] = $postData['SocialAccount']['rss_feed_url'];
+
+				$this->SocialAccount->set($saveAccount);
+				
+				if($this->SocialAccount->validates()){
+					$this->SocialAccount->save($saveAccount);
+				}
+
+			}else{
+				$this->request->data['SocialAccount'] = $socialAcountData['SocialAccount'];
+			}
+
+			$feed_data = array();
+			$feed_data = $this->FeedUrl->find('list', array(
+					'fields' => array('id', 'titleUrl')
+				)
+			);
+			
+			$this->set(compact('feed_data'));
+		}else{
+			$this->Session->setFlash(__('Account you are try to access does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+			$this->redirect(array('action' => 'account_list'));
+		}
+	}
+
+	public function delete($id){
+		
+		if(empty($id)){
+			$this->Session->setFlash(__('Account you are trying to delete does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+			$this->redirect(array('action' => 'account_list'));
+		}
+
+		$this->SocialAccount->id = $id;
+		if($this->SocialAccount->exists()){
+
+			$socialAcountData = $this->SocialAccount->find('first', array(
+					'conditions' => array('id' => $id),
+				)
+			);
+
+			if(isset($socialAcountData) && !empty($socialAcountData)){
+				$saveAccount['SocialAccount']['id'] = $id;
+				$saveAccount['SocialAccount']['status'] = 2; //2 indicate account soft delete
+				$this->SocialAccount->save($saveAccount);
+
+				$this->Session->setFlash(__('Account deleted successfully.'), 'default', array('class' => 'alert alert-success'));
+				$this->redirect(array('action' => 'account_list'));
+			}
+			
+		}else{
+			$this->Session->setFlash(__('Account you are trying to delete does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+			$this->redirect(array('action' => 'account_list'));
+		}
+	}
+
+	public function activate($id){
+		if(empty($id)){
+			$this->Session->setFlash(__('Account you are trying to activate does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+			$this->redirect(array('action' => 'account_list'));
+		}
+
+		$this->SocialAccount->id = $id;
+		if($this->SocialAccount->exists()){
+
+			$socialAcountData = $this->SocialAccount->find('first', array(
+					'conditions' => array('id' => $id),
+				)
+			);
+
+			if(isset($socialAcountData) && !empty($socialAcountData)){
+				$this->Session->write('SocialAccount', $socialAcountData);
+				
+				if(isset($socialAcountData['SocialAccount']['social_type'])){
+					if($socialAcountData['SocialAccount']['social_type'] == 1){
+						$twitterConnect = $this->twitterConnect();
+					}elseif($socialAcountData['SocialAccount']['social_type'] == 2){
+						$linkedinConnect = $this->linkedinConnect();
+					}elseif($socialAcountData['SocialAccount']['social_type'] == 3){
+						$this->fbConnect();
+					}elseif($socialAcountData['SocialAccount']['social_type'] == 4){
+
+					}
+				}
+			}
+			
+		}
+
+		$this->Session->setFlash(__('Account you are trying to activate does\'t exist.'), 'default', array('class' => 'alert alert-danger'));
+		$this->redirect(array('action' => 'account_list'));
+		
+	}
+
 	public function twitterConnect(){
 		$twitterConsumer = Configure::read('Twitter');
 		
@@ -78,7 +192,7 @@ class SocialAccountController extends AppController {
 		    $saveAccount['SocialAccount']['access_token'] = json_encode($access_token);
 
 		    $this->SocialAccount->save($saveAccount);
-
+		    $this->Session->delete('SocialAccount');
 		    $this->redirect('account_list');
 
 		}else{
@@ -170,9 +284,10 @@ class SocialAccountController extends AppController {
 		        'state' => uniqid('', true), // unique long string
 		        'redirect_uri' => Router::url('/social_account/linkedinConnect',true),
 		    );
-
+		    //prd($params);
 		    $url = 'https://www.linkedin.com/oauth/v2/authorization?'.http_build_query($params);
 		    header("Location:".$url);
+		    exit;
 		}
 
 		return false;
@@ -274,8 +389,17 @@ class SocialAccountController extends AppController {
 
         if (isset($request->data['columns'])) {
             foreach ($request->data['columns'] as $column) {
-                if (isset($column['searchable']) && $column['searchable'] == 'true') {
-                    if (isset($column['name']) && $column['search']['value'] != '') {
+            	if (isset($column['searchable']) && $column['searchable'] == 'true') {
+                	if(isset($column['name']) && $column['name'] == 'SocialAccount.social_type' && $column['search']['value'] != ''){
+
+                		$condition['SocialAccount.social_type'] = $column['search']['value'];
+
+                	}elseif(isset($column['name']) && $column['name'] == 'SocialAccount.status' && $column['search']['value'] != ''){
+
+                		//prd('hello');
+                		$condition['SocialAccount.status'] = $column['search']['value'];
+
+                	}elseif (isset($column['name']) && $column['search']['value'] != '') {
                         $condition[$column['name'] . ' LIKE '] = '%' . filter_var($column['search']['value']) . '%';
                     }
                 }
@@ -305,11 +429,12 @@ class SocialAccountController extends AppController {
             'offset' => $start
                 ));
         //prd($query);
-        $total_records = $this->SocialAccount->find('count', array('conditions' => $condition));
+        $total_records = $this->SocialAccount->find('count', array('conditions' => $condition, 'joins' => $joins));
 
         $dataResult = [];
         $totalRecords = $total_records;
         $sr_no = $start;
+        $siteUrl = Router::url('/',true);
         foreach ($query as $row) {
 
         	$social_type = '-';
@@ -326,7 +451,7 @@ class SocialAccountController extends AppController {
         	}
 
         	$connection_status = '-';
-        	if(isset($row['SocialAccount']['status']) && !empty($row['SocialAccount']['status'])){
+        	if(isset($row['SocialAccount']['status']) && $row['SocialAccount']['status'] != ''){
         		if($row['SocialAccount']['status'] == 0){
         			$connection_status = 'Connection Expire';
         		}elseif ($row['SocialAccount']['status'] == 1) {
@@ -334,12 +459,17 @@ class SocialAccountController extends AppController {
         		}
         	}
 
+        	$action = '<a href="'.$siteUrl.'social_account/edit_account/'.$row['SocialAccount']['id'].'">Edit</a>&nbsp;&nbsp;';
+        	$action .= '<a href="'.$siteUrl.'social_account/delete/'.$row['SocialAccount']['id'].'">Delete</a>&nbsp;&nbsp;';
+        	$action .= '<a href="'.$siteUrl.'social_account/activate/'.$row['SocialAccount']['id'].'">Activate</a>&nbsp;&nbsp;';
+
+
             $d['sr_no'] = ++$sr_no;
             $d['name'] = $row['SocialAccount']['name'];
             $d['social_type'] = $social_type;
             $d['feed_url'] = $row['FeedUrl']['title'];
             $d['status'] = $connection_status;
-            $d['action'] = 'Edit-Delete-Activate';
+            $d['action'] = $action;
 
             $dataResult[] = $d;
         }

@@ -21,6 +21,10 @@
  */
 App::uses('Controller', 'Controller');
 App::uses('CakeEmail', 'Network/Email');
+App::import('Vendor', 'OAuth');
+App::import('Vendor', 'TwitterAPIExchange');
+App::import('Vendor', 'twitteroauth');
+
 
 /**
  * Application Controller
@@ -374,4 +378,150 @@ class AppController extends Controller {
         curl_close ($ch);
         return $response;
     }    
+
+    /**
+     * Format article data for respective social network 
+     * @param $social_type string [twiter, linkedin, facebook, google]
+     * @param $articleData array Article data
+    **/
+    public function formatArticleData($social_type, $articleData = array()){
+        if(!empty($social_type) && !empty($articleData)){
+
+            //format data for twitter
+            if(strtolower($social_type) == 'twitter'){
+              $response['share_text'] = $articleData['title'];
+              $response['share_text'] .= $articleData['description'];
+
+              //limit twitter share text
+              if(strlen(trim($response['share_text'])) > 140){
+                $response['share_text'] = substr($response['share_text'], 0, 139);
+              }
+
+              //limit twitter share text and add link
+              if(isset($articleData['link']) && !empty($articleData['link'])){
+                  $response['share_text'] = substr($response['share_text'], 0, -24);
+                  $response['share_text'] .= $articleData['link'];
+              }
+
+              //limit twitter share text and add media while sharing
+              if(isset($articleData['media']) && !empty($articleData['media'])){
+                  $response['share_text'] = substr($response['share_text'], 0, -24);
+                  $response['media'] = $articleData['media'];
+              }
+            }
+
+            //format data for LinkedIn
+            if(strtolower($social_type) == 'linkedin'){
+                //pr('format');
+                if(isset($articleData['title']) && !empty($articleData['title']) && isset($articleData['description']) && !empty($articleData['description'])){
+
+                  $response['content']['title'] = $articleData['title'];
+                  $response['content']['description'] = $articleData['description'];
+                  $response['content']['submitted-url'] = $articleData['link'];
+                  //$response['comment']['submitted-url'] = $articleData['link'];
+                  $response['visibility']['code'] = 'anyone';
+                  $response['comment'] = $articleData['description'];
+                  //pr($response);
+                }
+            }
+
+
+            //format data for Facebook
+            if(strtolower($social_type) == 'facebook'){
+                $response = ''; 
+            }
+
+            //format data for Google
+            if(strtolower($social_type) == 'google'){
+                $response = '';
+            }
+
+            return $response;
+        }
+    }
+
+    protected function twitter_share($access_token, $share_data){
+
+        $twitterInfo = Configure::read('Twitter');
+        $requestMethod = 'POST';
+        
+        $settings = array(
+            'oauth_access_token' => $access_token['oauth_token'],
+            'oauth_access_token_secret' => $access_token['oauth_token_secret'],
+            'consumer_key' => $twitterInfo['CONSUMER_KEY'],
+            'consumer_secret' => $twitterInfo['CONSUMER_SECRET'],
+        );
+        
+        $mediaUploadurl = 'https://upload.twitter.com/1.1/media/upload.json'; //upload media api url
+        $shareUrl = 'https://api.twitter.com/1.1/statuses/update.json'; //update status api url
+        
+        $twitter = new TwitterAPIExchange($settings);
+        //prd('share hold');
+        //only run in case of media available
+        if (isset($share_data['media']) && !empty($share_data['media'])) {
+            
+            $imgDirPath = WWW_ROOT.'img/article_img/';
+            $filePath = $imgDirPath.$share_data['media'];
+            
+            //$method = 'POST';
+            $parameters = array(
+                'media' => base64_encode(file_get_contents($filePath)),
+            );
+            
+            try{
+                $mediaResponseData = $twitter->buildOauth($mediaUploadurl, $requestMethod)
+                    ->setPostfields($parameters)
+                    ->performRequest();
+
+                $mediaData = json_decode($mediaResponseData, true);
+            }catch(Exception $e){
+                $mediaData = array();
+            }
+            
+        }
+        
+        
+        if (isset($mediaData['media_id_string']) && !empty($mediaData['media_id_string'])) {
+            $postfields = array(
+                'status' => trim(strip_tags($share_data['share_text'])),
+                'media_ids' => $mediaData['media_id_string'],
+            );
+        } else {
+            $postfields = array(
+                'status' => trim(strip_tags($share_data['share_text'])),
+            );
+        }
+        
+        try{
+          $response = $twitter->buildOauth($shareUrl, $requestMethod)
+                ->setPostfields($postfields)
+                ->performRequest();  
+        }catch(Exception $e){
+            $response['error'] = json_encode($e);
+        }
+         
+        return $response;
+    }
+
+    protected function linkedin_share($access_token, $share_data){
+        $linkedinInfo = Configure::read('Linkedin');
+        $shareUrl = "https://api.linkedin.com/v1/people/~/shares?format=json"; //linkedin share api url
+        
+        $req_type1 = 'POST';
+          
+        $header = array();
+        $header[] = 'Content-type: application/json';
+        $header[] = 'Authorization: Bearer '.$access_token['access_token'];
+
+        $request_config = array(
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_HTTPHEADER => $header,
+        );
+
+        $postParameters = json_encode($share_data);
+
+        $responseData = $this->curlHttpRequest($shareUrl, $req_type1, $postParameters, $request_config);
+        return $responseData;
+    }
 }
