@@ -1,3 +1,4 @@
+
 <div class="box">
     <div class="box-header">
         <h3 class="box-title">Manage Articles</h3>
@@ -21,8 +22,23 @@
                     <tfoot>
                         <tr class="filter">
                             <th></th>
-                            <th></th>
-                            <th></th>
+                            <th><input class="search_init" type="text" value="" placeholder="Title" name="title"></th>
+                            <th>
+                                <select class="search_init" name="article_id">
+                                    <option value="">All</option>
+                                    <option value="0">Direct/Schedule</option>
+                                    <?php 
+                                        //pr($feedUrl);
+                                        $optHtml = '';
+                                        foreach ($feedUrl as $key => $title) {
+                                            $optHtml .= '<option value="'.$key.'">';
+                                            $optHtml .= $title;
+                                            $optHtml .= '</option>';
+                                        }
+                                        echo $optHtml;
+                                    ?>
+                                </select>
+                            </th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -49,10 +65,10 @@
             "data": {
                 'newval': "2"
             },
-            "order": [[1, "desc"]],
+            "order": [[0, "desc"]],
             "columns": [
                 {
-                    "name": "id",
+                    "name": "Article.id",
                     "data": "sr_no",
                     "className": 'align-center',
                 },
@@ -61,7 +77,7 @@
                     "data": "title"
                 },
                 {
-                    "name": "FeedUrl.title",
+                    "name": "Article.feed_id",
                     "data": "feed_url"
                 },
                 {
@@ -96,6 +112,7 @@
             var tbl = table.api();
             tbl.columns().eq(0).each(function (colIdx) {
                 if ($('input,select', tbl.column(colIdx).footer().length)) {
+                    console.log('hello ');
                     tbl
                     .column(colIdx)
                     .search($('input,select', tbl.column(colIdx).footer()).val());

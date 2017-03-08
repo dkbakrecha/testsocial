@@ -11,10 +11,30 @@ class FeedUrlsController extends AppController {
         $this->Auth->allow('');
     }
 
-    public function index() {
+    public function index($id=null) {
+        $feedData = array();
+        if(!empty($id)){
+            $this->loadModel('FeedUrl');
+            $feedData = $this->FeedUrl->find('first',array(
+                    'conditions' => array(
+                        'FeedUrl.id' => $id,
+                    ),
+                )
+            );
+        }
+
         if ($this->request->is('post') || $this->request->is('put')) {
             $postData = $this->request->data;
+
             if (!empty($postData['FeedUrl']['rss_url'])) {
+                //check for id exist or not
+                if(!empty($id)){
+                    $this->FeedUrl->id = $id;
+                    if($this->FeedUrl->exists()){
+                        $postData['FeedUrl']['id'] = $id;
+                    }
+                }
+
                 if ($this->FeedUrl->save($postData)) {
                     $this->Session->setFlash(__('The Url has been Updated'));
                     return $this->redirect(array('action' => 'index'));
@@ -23,6 +43,9 @@ class FeedUrlsController extends AppController {
                         __('The url could not be saved. Please, try again.')
                 );
             }
+        }else{
+            if(!empty($feedData))
+                $this->request->data = $feedData;
         }
     }
 
@@ -71,10 +94,18 @@ class FeedUrlsController extends AppController {
         $totalRecords = $total_records;
         $sr_no = $start;
         foreach ($query as $row) {
+            $action = '<span class="tbl-row-actions">
+                            <a href="'.Router::url('index/'.$row['FeedUrl']['id'],true).'">Edit</a>
+                        </span>';
+            $action .= '<span class="tbl-row-actions">
+                            <a href="'.Router::url('delete/'.$row['FeedUrl']['id'],true).'">Delete</a>
+                        </span>';
+
             $d['sr_no'] = ++$sr_no;
             $d['title'] = $row['FeedUrl']['title'];
             $d['rss_url'] = $row['FeedUrl']['rss_url'];
             $d['created'] = $row['FeedUrl']['created'];
+            $d['action'] = $action;
 
             $dataResult[] = $d;
         }
@@ -89,4 +120,19 @@ class FeedUrlsController extends AppController {
         exit;
     }
 
+    public function delete($id=null){
+        if(!empty($id)){
+            $this->FeedUrl->id = $id;
+            if($this->FeedUrl->exists()){
+                $deleteFeed['FeedUrl']['id'] = $id;
+                $deleteFeed['FeedUrl']['status'] = 2;
+                $this->FeedUrl->save($deleteFeed);
+                $this->Session->setFlash(__("Feed url deleted successfully!!."), 'default', array('class' => 'alert alert-success'));
+                $this->redirect('index');
+            }
+        }
+
+        $this->Session->setFlash(__("Feed url you try to delete doesn't exist."), 'default', array('class' => 'alert alert-danger'));
+        $this->redirect('index');
+    }
 }

@@ -4,6 +4,7 @@ App::uses('AppController', 'Controller');
 App::import('Vendor', 'OAuth');
 App::import('Vendor', 'twitteroauth');
 App::import('Vendor', 'linkedin');
+App::import('Vendor', 'google_client/autoload');
 
 class SocialAccountController extends AppController {
 
@@ -12,9 +13,7 @@ class SocialAccountController extends AppController {
     }
 
 	public function add_account(){
-		//prd('hello');
-		//$this->Session->setFlash(__('Invalid Key.'), 'default', array('class' => 'alert alert-danger'));
-		//pr($this->SocialAccount);
+		
 		$this->loadModel('FeedUrl');
 		$this->FeedUrl->virtualFields['titleUrl'] = 'CONCAT(title, "( ", rss_url, " )")';
 
@@ -42,7 +41,7 @@ class SocialAccountController extends AppController {
 					$this->fbConnect();
 
 				}elseif($saveAccount['SocialAccount']['social_type'] == 4){
-
+					$this->googleConnect();
 				}
 
 			}else{
@@ -161,7 +160,7 @@ class SocialAccountController extends AppController {
 					}elseif($socialAcountData['SocialAccount']['social_type'] == 3){
 						$this->fbConnect();
 					}elseif($socialAcountData['SocialAccount']['social_type'] == 4){
-
+						$this->googleConnect();
 					}
 				}
 			}
@@ -344,15 +343,20 @@ class SocialAccountController extends AppController {
 				$graph_url = "https://graph.facebook.com/me?access_token=". $access_token['access_token'];
 				$user = json_decode(file_get_contents($graph_url),true);
 				
+				$graph_url_account = "https://graph.facebook.com/me/accounts?access_token=". $access_token['access_token'];
+
+				$user_account = json_decode(file_get_contents($graph_url_account),true);
+
 				if(isset($user['id']) && !empty($user['id'])){
 					$saveAccount = $this->Session->read('SocialAccount');
 					
 					$saveAccount['SocialAccount']['social_unique_id'] = $user['id'];
 				    $saveAccount['SocialAccount']['access_token'] = $access_token['access_token'];
+				    $saveAccount['SocialAccount']['other_extra_info'] = json_encode($user_account);
 
 				    $this->SocialAccount->save($saveAccount);
 				}
-
+				//prd($user_account);
 				//prd($user);
 
 				$this->redirect('account_list');
@@ -364,7 +368,76 @@ class SocialAccountController extends AppController {
 	}
 
 	public function googleConnect(){
+		$guzzleClient = new \GuzzleHttp\Client(array( 'curl' => array( CURLOPT_SSL_VERIFYPEER => false, ), ));
+		//prd($guzzleClient);
+		//Create Client Request to access Google API
+		$client = new Google_Client();
+		$client->setApplicationName("PHP Google OAuth Login Example");
+		$client->setAuthConfig(WWW_ROOT.'../Config/client_id.json');
+		//$client->setClientId($client_id);
+		//$client->setClientSecret($client_secret);
+		$redirect_uri = Router::url('googleConnect',true);
+		//prd($redirect_uri);
+		$client->setRedirectUri($redirect_uri);
+		//$client->setDeveloperKey($simple_api_key);
+		$client->addScope("https://www.googleapis.com/auth/userinfo.email");
+		$client->addScope("https://www.googleapis.com/auth/plus.me");
+		$client->addScope("https://www.googleapis.com/auth/plus.stream.write");
+		$client->addScope("https://www.googleapis.com/auth/plus.stream.read");
+		$client->addScope("https://www.googleapis.com/auth/plus.circles.read");
+		$client->addScope("https://www.googleapis.com/auth/plus.circles.write");
+		$client->setHttpClient($guzzleClient);
+		//Send Client Request
+		$objOAuthService = new Google_Service_Oauth2($client);
+		//prd($objOAuthService);
 		
+		//Authenticate code from Google OAuth Flow
+		//Add Access Token to Session
+		if (isset($_GET['code'])) {
+			pr($_GET['code']);
+		  $client->authenticate($_GET['code']);
+		  $_SESSION['access_token'] = $client->getAccessToken();
+		  header('Location: ' . filter_var($redirect_uri, FILTER_SANITIZE_URL));
+		}
+
+		//Set Access Token to make Request
+		if (isset($_SESSION['access_token']) && $_SESSION['access_token']) {
+			pr($_SESSION['access_token']);
+		  $client->setAccessToken($_SESSION['access_token']);
+		}
+
+		//Get User Data from Google Plus
+		//If New, Insert to Database
+		if ($client->getAccessToken()) {
+		  $userData = $objOAuthService->userinfo->get();
+		  $access_token = $client->getAccessToken();
+		  pr($client->getAccessToken());
+		  pr($userData);
+		  /*if(!empty($userData)) {
+			$objDBController = new DBController();
+			$existing_member = $objDBController->getUserByOAuthId($userData->id);
+			if(empty($existing_member)) {
+				$objDBController->insertOAuthUser($userData);
+			}
+		  }*/
+
+		  	if(isset($access_token['access_token']) && !empty($access_token['access_token'])){
+				$saveAccount = $this->Session->read('SocialAccount');
+				
+				$saveAccount['SocialAccount']['social_unique_id'] = $userData->id;
+			    $saveAccount['SocialAccount']['access_token'] = json_encode($access_token);
+			    unset($_SESSION['access_token']);
+			    $this->SocialAccount->save($saveAccount);
+			    $this->redirect('account_list');
+			}
+
+		  $_SESSION['access_token'] = $client->getAccessToken();
+		} else {
+		  $authUrl = $client->createAuthUrl();
+		  header("Location:".$authUrl);
+		  exit;
+		}
+		$this->redirect('add_account');
 	}
 
 	public function account_list(){
@@ -484,4 +557,37 @@ class SocialAccountController extends AppController {
         exit;
 
 	}
+
+	public function googleShare(){
+		$shareUrl = 'https://www.googleapis.com/plusDomains/v1/people/me/activities';
+		//$listUrl = 'https://www.googleapis.com/plus/v1domains/people/me/activities/user';
+		$method = 'Post';
+		
+		$access_token = 'ya29.GlwEBACAcFlU4zjctZISrnznCpn-IIZ3QXkI0SWYIgujvpwo3SyygaurLr6vj3UvdJMk9GiXIWRtshCT2UgYL9DvOm9WS2nRS_eO58EFyntBULrtS4wv_afNGeFRNw';
+
+		//$access_token = 'ya29.GlsEBOcfQqgv04tXmSkTTivWWJfgmKtyX40-sXjFXJqAraiYY_r1bjsxAhB_hmHwmIIh2IX7uTFj4dJ4tvc3u8-nR03Ci55R3n3A5kzE5DUDnfErnySy0AhZTPH7';
+
+		$header = array();
+        $header[] = 'Content-type: application/json';
+        $header[] = 'Authorization: OAuth '.$access_token;
+
+        $request_config = array(
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_HTTPHEADER => $header,
+        );
+
+        $post_data = array(
+        	'object' => array('originalContent' => 'Hey this is my first auto post.'),
+        	'access' => array('items' => array('type'=>'myCircles'), 'domainRestricted' => false),
+        );
+
+        /*'curl -v -H "Content-Type: application/json" -H "Authorization: OAuth$ACCESS_TOKEN" -d "{"object": {"originalContent": "Happy Monday!#caseofthemondays"},"access":{"kind":"plus#acl","items":[{"type":"domain"}],"domainRestricted":true}}" -X POST https://www.googleapis.com/plusDomains/v1/people/{userId}/activities'*/
+
+        $postParameters = json_encode($post_data);
+        $responseData = $this->curlHttpRequest($shareUrl, $method, $postParameters, $request_config);
+        prd($responseData);
+        return $responseData;
+	}
+
 }

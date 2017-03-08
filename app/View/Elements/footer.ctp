@@ -4,7 +4,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <p class="copyright">
-                        &copy; <?php echo date('Y'); ?> 
+                        &copy; <?php echo date('Y'); ?> Social Tool
                     </p> 
                 </div>
             </div>

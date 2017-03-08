@@ -23,3 +23,11 @@
 .clr-orange{
     color: #FFCC00;
 }
+.breadcrumb-wrapper {
+    background-attachment: fixed;
+    background-image: url("../img/slider-bg.jpg");
+    background-position: 50% 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+    /*height: 450px;*/
+}

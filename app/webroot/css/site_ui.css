@@ -971,3 +971,9 @@ label.error{
 .gkbytes .topic-list{
     margin-top: 15px
 }
+
+.dataTables_wrapper .dataTables_info{
+    border-right: none !important;
+    margin: 22px 0 !important;
+    float: left !important; 
+}

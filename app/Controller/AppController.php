@@ -399,14 +399,14 @@ class AppController extends Controller {
 
               //limit twitter share text and add link
               if(isset($articleData['link']) && !empty($articleData['link'])){
-                  $response['share_text'] = substr($response['share_text'], 0, -24);
-                  $response['share_text'] .= $articleData['link'];
+                  $response['share_text'] = substr($response['share_text'], 0, -25);
+                  $response['share_text'] .= ' '.$articleData['link'];
               }
 
               //limit twitter share text and add media while sharing
-              if(isset($articleData['media']) && !empty($articleData['media'])){
+              if(isset($articleData['image']) && !empty($articleData['image'])){
                   $response['share_text'] = substr($response['share_text'], 0, -24);
-                  $response['media'] = $articleData['media'];
+                  $response['image'] = $articleData['image'];
               }
             }
 
@@ -418,6 +418,11 @@ class AppController extends Controller {
                   $response['content']['title'] = $articleData['title'];
                   $response['content']['description'] = $articleData['description'];
                   $response['content']['submitted-url'] = $articleData['link'];
+
+                  if(isset($articleData['image']) && !empty($articleData['image'])){
+                      $response['content']['submitted-image-url'] = Router::url('/img/article_img/'.$articleData['image'],true);
+                  }
+
                   //$response['comment']['submitted-url'] = $articleData['link'];
                   $response['visibility']['code'] = 'anyone';
                   $response['comment'] = $articleData['description'];
@@ -428,7 +433,16 @@ class AppController extends Controller {
 
             //format data for Facebook
             if(strtolower($social_type) == 'facebook'){
-                $response = ''; 
+                if(isset($articleData['title']) && !empty($articleData['title']) && isset($articleData['description']) && !empty($articleData['description'])){
+
+                  $response['message'] = $articleData['title'];
+                  $response['message'] .= $articleData['description'];
+                  
+                }
+
+                if(isset($articleData['image']) && !empty($articleData['image'])){
+                    $response['link'] = Router::url('/img/article_img/'.$articleData['image'],true);
+                }
             }
 
             //format data for Google
@@ -458,10 +472,10 @@ class AppController extends Controller {
         $twitter = new TwitterAPIExchange($settings);
         //prd('share hold');
         //only run in case of media available
-        if (isset($share_data['media']) && !empty($share_data['media'])) {
+        if (isset($share_data['image']) && !empty($share_data['image'])) {
             
             $imgDirPath = WWW_ROOT.'img/article_img/';
-            $filePath = $imgDirPath.$share_data['media'];
+            $filePath = $imgDirPath.$share_data['image'];
             
             //$method = 'POST';
             $parameters = array(
@@ -523,5 +537,96 @@ class AppController extends Controller {
 
         $responseData = $this->curlHttpRequest($shareUrl, $req_type1, $postParameters, $request_config);
         return $responseData;
+    }
+
+    protected function fb_post_share($access_token, $share_data){
+        //prd($access_token);
+        $fbInfo = Configure::read('Facebook');
+        $publish_post = 'https://graph.facebook.com/v2.8/me/feed?access_token='.$access_token;
+
+        /*$postParams = array(
+            'message' => 'This is dummy post text',
+            //'privacy' => array('value' => 'EVERYONE'),
+        );*/
+        $postParams = $share_data;
+        pr($share_data);
+        $request_config = array(
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        );
+
+        $response = $this->curlHttpRequest($publish_post, 'POST', $postParams, $request_config);
+        $responseDecode = json_decode($response['data'],true);
+        /*pr($responseDecode);
+        prd($response);*/
+        if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+            $postData = json_decode($response['data'], true);
+
+            $post_id = $postData['id'];
+
+            $read_post = 'https://graph.facebook.com/v2.8/'.$post_id.'?access_token='.$access_token;
+            $getParams = array('fields' => 'id,created_time,description,status_type,type');
+            $request_config = array(
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => 0,
+            );
+
+            $response1 = $this->curlHttpRequest($read_post, 'GET', $getParams, $request_config);            
+            //prd($response1);
+            return $response1['data'];
+        }else{
+          return $response['data'];
+        }
+
+    }
+
+    protected function fb_page_post_share($access_token, $share_data, $extra_info=array()){
+        $fbInfo = Configure::read('Facebook');
+
+        if(!empty($extra_info)){
+            $extra_info_arr = json_decode($extra_info,true);
+            //prd($extra_info_arr);
+            //$extra_info_arr['data'] = json_decode($extra_info_arr['data'],true);
+            pr($extra_info_arr);
+            if(isset($extra_info_arr['data'][0]['id']) && !empty($extra_info_arr['data'][0]['id'])){
+                $page_id = $extra_info_arr['data'][0]['id'];
+                $page_access_token = $extra_info_arr['data'][0]['access_token'];
+                $publish_post = 'https://graph.facebook.com/v2.8/'.$page_id.'/feed?access_token='.$page_access_token;
+
+                /*$postParams = array(
+                    'message' => 'This is dummy post text',
+                    //'privacy' => array('value' => 'EVERYONE'),
+                );*/
+                $postParams = $share_data;
+                pr($share_data);
+                $request_config = array(
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_SSL_VERIFYPEER => 0,
+                );
+
+                $response = $this->curlHttpRequest($publish_post, 'POST', $postParams, $request_config);
+                $responseDecode = json_decode($response['data'],true);
+                /*pr($responseDecode);
+                prd($response);*/
+                if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+                    $postData = json_decode($response['data'], true);
+
+                    $post_id = $postData['id'];
+
+                    $read_post = 'https://graph.facebook.com/v2.8/'.$post_id.'?access_token='.$access_token;
+                    $getParams = array('fields' => 'id,created_time,description,status_type,type');
+                    $request_config = array(
+                        CURLOPT_SSL_VERIFYHOST => 0,
+                        CURLOPT_SSL_VERIFYPEER => 0,
+                    );
+
+                    $response1 = $this->curlHttpRequest($read_post, 'GET', $getParams, $request_config);            
+                    //prd($response1);
+                    return $response1['data'];
+                }else{
+                  return $response['data'];
+                }
+            }
+        }
     }
 }

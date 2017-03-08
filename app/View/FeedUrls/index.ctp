@@ -23,6 +23,7 @@
                         echo $this->Form->input('rss_url', array(
                             'class' => 'form-control',
                             'label' => false,
+                            'type' => 'text',
                             'placeholder' => 'RSS Url',
                             'div' => false
                         ));
@@ -30,7 +31,7 @@
                 </div>
 
                 <?php
-                echo $this->Form->button(__('Add'), array(
+                echo $this->Form->button(__('Save'), array(
                     'class' => 'btn btn-default',
                     'type' => 'submit'
                 ));
@@ -86,10 +87,10 @@
             "data": {
                 'newval': "2"
             },
-            "order": [[1, "desc"]],
+            "order": [[0, "desc"]],
             "columns": [
                 {
-                    "name": "id",
+                    "name": "FeedUrl.id",
                     "data": "sr_no",
                     "className": 'align-center',
                 },
@@ -107,6 +108,8 @@
                     "className": 'align-center',
                 },
                 {
+                    "name": "action",
+                    "data": "action",
                     "className": 'align-center',
                 }
             ],
@@ -115,33 +118,6 @@
                     "searchable": false,
                     "orderable": false,
                     "targets": [ 4]
-                },
-                {
-                    "render": function (data, type, row) { //data-id="'+row.id+'"
-                        var st = (row.status == '1') ? 'status-green' : 'status-red';
-
-                        var _title = "";
-                        var _action = "";
-                        if (row.role == '2' && row.instructor_id == '0') {
-                            _title = "Edit Student (Individual)";
-                            _action = "studentedit";
-                        } else if (row.role == '2' && row.instructor_id != '0') {
-                            _title = "Edit Student (Under Instructor)";
-                            _action = "students_instructor_edit";
-                        } else if (row.role == '4') {
-                            _title = "Edit Instructor";
-                            _action = "instructoredit";
-                        } else if (row.role == '5') {
-                            _title = "Edit Practitioner";
-                            _action = "practitioneredit";
-                        }
-
-                        var dv = '<span class="tbl-row-actions">';
-                        dv += '<a href="<?= $this->Html->url(array('controller' => 'users')) ?>/'+ _action +'/' + row.id + '", title = "' + _title + '"><i class="fa fa-pencil"></i></a>'
-                        dv += '</span>';
-                        return dv;
-                    },
-                    "targets": 4,
                 }
             ]
         });

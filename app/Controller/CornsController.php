@@ -53,41 +53,43 @@ class CornsController extends AppController {
         //prd($content);
         $x = new SimpleXmlElement($content);
         return $x;
-        //prd($x);
-        /* echo "<ul>";
-
-          foreach ($x->channel->item as $entry) {
-          //pr($entry);
-          //echo "<li><a href='$entry->link' title='$entry->title'>" . $entry->title . "</a></li>";
-          echo '<h1>' . $entry->title . '</h1>';
-          echo '<p>';
-          echo '<strong>Url:- </strong>' . $entry->title;
-          echo '</p>';
-          echo '<p>';
-          echo '<strong>Description:- </strong>' . $entry->description;
-          echo '</p>';
-          }
-          echo "</ul>"; */
     }
 
     public function update_articles($feedInfo, $feed_id) {
         $this->loadModel('Article');
         if (!empty($feedInfo)) {
             foreach ($feedInfo->channel->item as $entry) {
-                $article = array();
-                $article['Article']['feed_id'] = $feed_id;
-                $article['Article']['title'] = $entry->title;
-                $article['Article']['description'] = $entry->description;
-                $article['Article']['link'] = $entry->link;
-                $article['Article']['image'] = '';
-                $article['Article']['guid'] = $entry->guid;
-                $article['Article']['pub_date'] = $entry->pubDate;
-                $article['Article']['status'] = 1;
-                $article['Article']['created'] = date('Y-m-d H:i:s');
-                $article['Article']['updated'] = date('Y-m-d H:i:s');
-                
-                $this->Article->create();
-                $this->Article->save($article);
+
+                $isDuplicate = false;
+                //check article exist by guid
+                if(isset($entry->guid) && !empty($entry->guid)){
+                    $conditions = array('guid' => trim($entry->guid));
+                    $article_count = $this->Article->find('count',array(
+                            'conditions' => $conditions,
+                        )
+                    );
+
+                    if($article_count > 0){
+                        $isDuplicate = true;
+                    }
+                }
+
+                if(!$isDuplicate){
+                    $article = array();
+                    $article['Article']['feed_id'] = $feed_id;
+                    $article['Article']['title'] = $entry->title;
+                    $article['Article']['description'] = $entry->description;
+                    $article['Article']['link'] = $entry->link;
+                    $article['Article']['image'] = '';
+                    $article['Article']['guid'] = $entry->guid;
+                    $article['Article']['pub_date'] = $entry->pubDate;
+                    $article['Article']['status'] = 1;
+                    $article['Article']['created'] = date('Y-m-d H:i:s');
+                    $article['Article']['updated'] = date('Y-m-d H:i:s');
+                    //pr($article);
+                    $this->Article->create();
+                    $this->Article->save($article);
+                }
             }
         }
     }
@@ -97,6 +99,47 @@ class CornsController extends AppController {
      * @param $social_type string [ Twitter, LinkedIn, Facebook, Google]
     **/
     public function share($social_type){
+
+        $fb = Configure::read('Facebook');
+        //pr($fb);
+        $access_token = 'EAAZAViLxqhkQBAFrs2kEnBea3WgFIpswsERrxbujhMwTbNyY7uS4yYZBBtBAd2J5OmlTfwrcTkP3ksQJXQ45SM6RKKTpm2QrUvhwwtMnlJu0uqodHsiraEzvohlwwPfNywjZCmHQS78badbfIT61R8xUguNDD7lOGZCJ4OufeQZDZD';
+        
+        $page_access_token = 'https://graph.facebook.com/me/accounts?access_token='.$access_token;
+
+        $publish_post = 'https://graph.facebook.com/v2.8/me/feed?access_token='.$access_token;
+    
+
+        $postParams = array(
+            'message' => 'This is dummy post text',
+            //'privacy' => array('value' => 'EVERYONE'),
+        );
+
+        $request_config = array(
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        );
+
+        $response = $this->curlHttpRequest($publish_post, 'POST', $postParams, $request_config);
+
+        if(isset($response)){
+            $postData = json_decode($response['data'], true);
+
+            $post_id = $postData['id'];
+
+            $read_post = 'https://graph.facebook.com/v2.8/'.$post_id.'?access_token='.$access_token;
+            $getParams = array();
+            $request_config = array(
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => 0,
+            );
+
+            $response1 = $this->curlHttpRequest($read_post, 'GET', $getParams, $request_config);            
+            prd($response1);
+        }
+        pr($response1);
+        //pr($url);
+        prd('hold');
+
         $this->loadModel('Article');
         $this->loadModel('SocialAccount');
         $social_network = array('twitter' => 1, 'linkedin' => 2, 'facebook' => 3, 'google' => 4);
@@ -116,16 +159,25 @@ class CornsController extends AppController {
     public function processArticle($social_type){
         $this->loadModel('Article');
         $this->loadModel('SocialAccount');
-        $this->loadModel('ShareLog');
+        $this->loadModel('SharedLog');
+        $this->loadModel('ToolSetting');
 
         $social_type = strtolower($social_type);
+
+        $toolSetting = $this->ToolSetting->findById(1);
+
+        if(isset($toolSetting['ToolSetting']['setting_value']) && !empty($toolSetting['ToolSetting']['setting_value'])){
+            $limit = $toolSetting['ToolSetting']['setting_value'];
+        }else{
+            $limit = 2;
+        }
 
         $articleDataList = $this->Article->find('all', array(
                 'conditions' => array(
                     'share_status' => 0,
-                    'feed_id' => 2,
+                    //'feed_id' => 2,
                 ),
-                'limit' => 5
+                'limit' => $limit,
             )
         );
         //prd($articleDataList);
@@ -168,7 +220,7 @@ class CornsController extends AppController {
                                     'social_type' => $this->social_network_key[$social_type],
                                     'status' => 1,
                                 ),
-                                'fields' => array('id', 'name', 'social_unique_id','access_token'),
+                                'fields' => array('id', 'name', 'social_unique_id','access_token', 'other_extra_info'),
                             )
                         );
                         //prd($SocialAccountList);
@@ -179,48 +231,98 @@ class CornsController extends AppController {
                             pr($SocialAccountList);
                             $share_data = $this->formatArticleData($social_type, $article['Article']);
                             foreach ($SocialAccountList as $socialAccount) {
-                                $access_token = json_decode($socialAccount['SocialAccount']['access_token'], true);
-                                //prd($access_token);
+                                //prd($socialAccount);
+                                if($social_type == 'twitter' || $social_type == 'linkedin'){
+                                    $access_token = json_decode($socialAccount['SocialAccount']['access_token'], true);
+                                }else{
+                                    $access_token = $socialAccount['SocialAccount']['access_token'];
+                                }
 
                                 if($social_type == 'twitter'){
                                     $response = $this->twitter_share($access_token,$share_data);
                                 }elseif ($social_type == 'linkedin') {
                                     $response = $this->linkedin_share($access_token,$share_data);
+                                }elseif ($social_type == 'facebook'){
+                                    $response = $this->fb_post_share($access_token,$share_data);
+                                    $response_1 = $this->fb_page_post_share($access_token,$share_data, $socialAccount['SocialAccount']['other_extra_info']);
+
+                                    pr($response);
+                                    pr($response_1);
                                 }
 
 
                                 if(isset($response)){
 
-                                    if($social_type == 'twitter'){
+                                    if($social_type == 'twitter' || $social_type == 'facebook'){
                                         $responseDecode = json_decode($response, true);
                                     }elseif ($social_type == 'linkedin') {
                                         $responseDecode = $response;
                                     }
 
-                                    if(isset($responseDecode['created_at']) && !empty($responseDecode['created_at'])){
-                                        $saveShareLog['ShareLog']['share_status'] = 1;
-                                        $saveShareLog['ShareLog']['response'] = json_encode($response);
-                                    }else{
-                                        $saveShareLog['ShareLog']['share_status'] = 3;
-                                        $saveShareLog['ShareLog']['response'] = json_encode($response);
+                                    if($social_type == 'twitter'){
+                                        if(isset($responseDecode['created_at']) && !empty($responseDecode['created_at'])){
+                                            $saveShareLog['SharedLog']['share_status'] = 1;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }else{
+                                            $saveShareLog['SharedLog']['share_status'] = 3;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }
+                                    }elseif($social_type == 'facebook'){
+                                        if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+                                            $saveShareLog['SharedLog']['share_status'] = 1;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }else{
+                                            $saveShareLog['SharedLog']['share_status'] = 3;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }
                                     }
 
-                                    $saveShareLog['ShareLog']['feed_url_id'] = $feed_id;
-                                    $saveShareLog['ShareLog']['article_id'] = $article['Article']['id'];
-                                    $saveShareLog['ShareLog']['social_account_id'] = $socialAccount['SocialAccount']['id'];
-                                    $saveShareLog['ShareLog']['social_type'] = $this->social_network_key[$social_type];
-                                    $saveShareLog['ShareLog']['share_text'] = json_encode($share_data);
-                                    $saveShareLog['ShareLog']['created'] = date("Y-m-d H:i:s");
-                                    $saveShareLog['ShareLog']['updated'] = date("Y-m-d H:i:s");
+                                    $saveShareLog['SharedLog']['feed_url_id'] = $feed_id;
+                                    $saveShareLog['SharedLog']['article_id'] = $article['Article']['id'];
+                                    $saveShareLog['SharedLog']['social_account_id'] = $socialAccount['SocialAccount']['id'];
+                                    $saveShareLog['SharedLog']['social_type'] = $this->social_network_key[$social_type];
+                                    $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                                    $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                                    $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
                                     pr($saveShareLog);
-                                    $this->ShareLog->save($saveShareLog);
-
-                                    $updArticle['Article']['id'] = $article['Article']['id'];
-                                    $updArticle['Article']['share_status'] = 1;
-                                    $this->Article->save($updArticle);
+                                    $this->SharedLog->save($saveShareLog);
                                 }
+                                sleep(10);
 
+
+                                if(isset($response_1)){
+
+
+                                    $responseDecode = json_decode($response, true);
+                                    
+                                    if($social_type == 'facebook'){
+                                        if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+                                            $saveShareLog['SharedLog']['share_status'] = 1;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }else{
+                                            $saveShareLog['SharedLog']['share_status'] = 3;
+                                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                                        }
+                                    }
+
+                                    $saveShareLog['SharedLog']['feed_url_id'] = $feed_id;
+                                    $saveShareLog['SharedLog']['article_id'] = $article['Article']['id'];
+                                    $saveShareLog['SharedLog']['social_account_id'] = $socialAccount['SocialAccount']['id'];
+                                    $saveShareLog['SharedLog']['social_type'] = 5;
+                                    $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                                    $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                                    $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
+                                    
+                                    $this->SharedLog->save($saveShareLog);
+                                    sleep(10);
+                                }
+                                
+                                //prd('hold');
                             }
+
+                            $updArticle['Article']['id'] = $article['Article']['id'];
+                            $updArticle['Article']['share_status'] = 1;
+                            $this->Article->save($updArticle);
                         }
                     }
                 }

@@ -65,10 +65,10 @@
             "data": {
                 'newval': "2"
             },
-            "order": [[1, "desc"]],
+            "order": [[0, "desc"]],
             "columns": [
                 {
-                    "name": "id",
+                    "name": "SocialAccount.id",
                     "data": "sr_no",
                     "className": 'align-center',
                 },

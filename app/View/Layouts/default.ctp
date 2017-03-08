@@ -49,14 +49,10 @@
     <body>
 
         <?php 
-        if (isset($this->request->params['admin'])) {
-            echo $this->element('header_admin'); 
-        }else{
             echo $this->element('header'); 
 			if(empty($removeBreadcrumb)){
 				echo $this->element('breadcrumb');
 			}
-        }
         ?>
 
         <div class="site-content <?php echo (!empty($content_class)) ? $content_class : ""; ?>" id="content">
@@ -70,11 +66,8 @@
 
         <?php
         if (!isset($this->request->params['admin'])) {
-            //echo $this->element('social');
             echo $this->element('footer');
-            //echo $this->element('_site_js');
         }
-        //echo $this->element('sql_dump');
         ?>
     </body>
 </html>

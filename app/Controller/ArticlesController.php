@@ -8,12 +8,16 @@ App::import('Vendor', 'simple_html_dom');
 App::import('Vendor', 'UrlToAbsolute');
 
 class ArticlesController extends AppController {
+
+    protected $social_network_key = array('twitter' => 1, 'linkedin' => 2, 'facebook' => 3, 'google' => 4);
+
 	public function beforeFilter() {
         parent::beforeFilter();
     }
 
     public function add(){
         $this->loadModel('SocialAccount');
+        $this->loadModel('SharedLog');
         $twitterAccount = $this->SocialAccount->find('list', array(
                 'conditions' => array('social_type' => 1),
                 'fields' => array('id', 'Name'),
@@ -43,7 +47,7 @@ class ArticlesController extends AppController {
     	if($this->request->is('post')){
     		$postData = $this->request->data;
 
-            prd($postData);
+            //prd($postData);
 
             if(isset($postData['Article']['schedule_date']) && !empty($postData['Article']['schedule_date'])){
                 $postData['Article']['schedule_date'] = date('Y-m-d',strtotime($postData['Article']['schedule_date']));
@@ -95,7 +99,7 @@ class ArticlesController extends AppController {
 
                     $fileContent = file_get_contents($postData['Article']['previewImg']);
                     file_put_contents($uploadPath, $fileContent);
-                    $postData['Article']['media'] = $image_name;
+                    $postData['Article']['image'] = $image_name;
 
                 }else{
 
@@ -127,11 +131,153 @@ class ArticlesController extends AppController {
                     $postData['Article']['media'] = $image_name;
                 }   
                 
+
+                //prd($postData);
                 $this->Article->save($postData, false);
-                $this->redirect(array('action' => 'add'));
+                $article_id = $this->Article->id;
+                //pr($article_id);
+                if(isset($postData['Article']['twitter_account']) && !empty($postData['Article']['twitter_account'])){
+                    $social_type = 'twitter';
+                    $share_data = $this->formatArticleData($social_type, $postData['Article']);
+                    //pr($share_data);
+                    $twitterSocialAcc = $this->SocialAccount->find('all',array(
+                            'conditions' => array(
+                                'id' => $postData['Article']['twitter_account'],
+                            )
+                        )
+                    );
+
+                    foreach ($twitterSocialAcc as $key => $account) {
+                        $access_token = json_decode($account['SocialAccount']['access_token'], true);   
+                        $response = $this->twitter_share($access_token,$share_data);
+                        $responseDecode = json_decode($response, true);
+                        //pr($responseDecode);
+
+                        $saveShareLog = array();
+                        if(isset($responseDecode['created_at']) && !empty($responseDecode['created_at'])){
+                            $saveShareLog['SharedLog']['share_status'] = 1;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }else{
+                            $saveShareLog['SharedLog']['share_status'] = 3;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }
+
+                        $saveShareLog['SharedLog']['article_id'] = $article_id;
+                        $saveShareLog['SharedLog']['social_account_id'] = $account['SocialAccount']['id'];
+                        $saveShareLog['SharedLog']['social_type'] = $this->social_network_key[$social_type];
+                        $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                        $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                        $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
+                        
+                        $this->SharedLog->create();
+                        $this->SharedLog->save($saveShareLog);
+                    }
+                }
+
+                if(isset($postData['Article']['linkedin_account']) && !empty($postData['Article']['linkedin_account'])){
+                    $social_type = 'linkedin';
+                    $share_data = $this->formatArticleData($social_type, $postData['Article']);
+                    //pr($share_data);
+                    $linkedinSocialAcc = $this->SocialAccount->find('all',array(
+                            'conditions' => array(
+                                'id' => $postData['Article']['linkedin_account'],
+                            )
+                        )
+                    );
+
+                    foreach ($linkedinSocialAcc as $key => $account) {
+                        $access_token = json_decode($account['SocialAccount']['access_token'], true);
+                        $response = $this->linkedin_share($access_token,$share_data);
+                        $responseDecode = $response;
+                        //pr($responseDecode);
+
+                        $saveShareLog = array();
+                        $saveShareLog['SharedLog']['article_id'] = $article_id;
+                        $saveShareLog['SharedLog']['social_account_id'] = $account['SocialAccount']['id'];
+                        $saveShareLog['SharedLog']['social_type'] = $this->social_network_key[$social_type];
+                        $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                        $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                        $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
+                        
+                        $this->SharedLog->create();
+                        $this->SharedLog->save($saveShareLog);
+                    }
+                }
+                
+                if(isset($postData['Article']['fb_account']) && !empty($postData['Article']['fb_account'])){
+                    $social_type = 'facebook';
+                    $share_data = $this->formatArticleData($social_type, $postData['Article']);
+                    //pr($share_data);
+                    $fbSocialAcc = $this->SocialAccount->find('all',array(
+                            'conditions' => array(
+                                'id' => $postData['Article']['fb_account'],
+                            )
+                        )
+                    );
+
+                    foreach ($fbSocialAcc as $key => $account) {
+                        $access_token = $account['SocialAccount']['access_token'];
+                        $response = $this->fb_post_share($access_token,$share_data);
+
+                        $responseDecode = json_decode($response, true);
+
+                        //pr($responseDecode);
+
+                        if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+                            $saveShareLog['SharedLog']['share_status'] = 1;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }else{
+                            $saveShareLog['SharedLog']['share_status'] = 3;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }
+
+                        $saveShareLog = array();
+                        $saveShareLog['SharedLog']['article_id'] = $article_id;
+                        $saveShareLog['SharedLog']['social_account_id'] = $account['SocialAccount']['id'];
+                        $saveShareLog['SharedLog']['social_type'] = $this->social_network_key[$social_type];
+                        $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                        $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                        $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
+                        
+                        $this->SharedLog->create();
+                        $this->SharedLog->save($saveShareLog);
+
+                        $response_1 = $this->fb_page_post_share($access_token,$share_data, $account['SocialAccount']['other_extra_info']);
+
+
+                        $responseDecode = json_decode($response, true);
+                        if(isset($responseDecode['id']) && !empty($responseDecode['id'])){
+                            $saveShareLog['SharedLog']['share_status'] = 1;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }else{
+                            $saveShareLog['SharedLog']['share_status'] = 3;
+                            $saveShareLog['SharedLog']['response'] = json_encode($response);
+                        }
+
+                        $saveShareLog = array();
+                        $saveShareLog['SharedLog']['article_id'] = $article_id;
+                        $saveShareLog['SharedLog']['social_account_id'] = $account['SocialAccount']['id'];
+                        $saveShareLog['SharedLog']['social_type'] = 5; //$this->social_network_key[$social_type];
+                        $saveShareLog['SharedLog']['share_text'] = json_encode($share_data);
+                        $saveShareLog['SharedLog']['created'] = date("Y-m-d H:i:s");
+                        $saveShareLog['SharedLog']['updated'] = date("Y-m-d H:i:s");
+                        
+                        $this->SharedLog->create();
+                        $this->SharedLog->save($saveShareLog);
+                    }
+                }
+
+                
+                //prd('hold');
+                /*if(isset($postData['Article']['google_account']) && !empty($postData['Article']['google_account'])){
+                    $social_type = 'google';
+                    $share_data = $this->formatArticleData($social_type, $postData['Article']);
+                }*/
+                $this->Session->setFlash(__("Your article saved and shared(schedule) successful."), 'default', array('class' => 'alert alert-success'));
+                $this->redirect(array('action' => 'lists'));
             }else{
                 $this->request->data['Article'] = $postData['Article'];
-                $this->Session->setFlash("Please fill all required fields.", 'flash_error');
+                $this->Session->setFlash(__("Please fill all required fields."), 'default', array('class' => 'alert alert-danger'));
             }
     	}else{
             $selectedTwitterAcc = array_keys($twitterAccount);
@@ -280,7 +426,15 @@ class ArticlesController extends AppController {
     }
 
     public function lists(){
+        $this->loadModel('FeedUrl');
+        $feedUrl = $this->FeedUrl->find('list',array(
+                'conditions' => array('status != 2'),
+                'fields' => array('id','title'),
+            )
+        );
+        //prd($feedUrl);
         $this->set('title_for_layout', 'Manage Article');
+        $this->set(compact('feedUrl'));
     }
 
     public function article_grid(){
@@ -302,20 +456,22 @@ class ArticlesController extends AppController {
         if (isset($request->data['columns'])) {
             foreach ($request->data['columns'] as $column) {
                 if (isset($column['searchable']) && $column['searchable'] == 'true') {
-                    if (isset($column['name']) && $column['search']['value'] != '') {
+                    if(isset($column['name']) && $column['name'] == 'FeedUrl.id' && $column['search']['value'] != ''){
+                        $condition[$column['name']] = $column['search']['value'];
+                    }elseif (isset($column['name']) && $column['search']['value'] != '') {
                         $condition[$column['name'] . ' LIKE '] = '%' . filter_var($column['search']['value']) . '%';
                     }
                 }
             }
         }
-        
+        //prd($condition);
         $fields = array('*');
 
         $joins = array(
             array(
                 'table' => 'feed_urls',
                 'alias' => 'FeedUrl',
-                'type' => 'INNER',
+                'type' => 'LEFT',
                 'conditions'=> array(
                     'Article.feed_id = FeedUrl.id', 
                 )
@@ -345,8 +501,8 @@ class ArticlesController extends AppController {
 
             $d['sr_no'] = ++$sr_no;
             $d['title'] = $row['Article']['title'];
-            $d['feed_url'] = $row['FeedUrl']['title'];
-            $d['created_on'] = '-';
+            $d['feed_url'] = empty($row['FeedUrl']['title']) ? '-' : $row['FeedUrl']['title'];
+            $d['created_on'] = date("m-d-Y",strtotime($row['Article']['created']));
             $d['action'] = $action;
 
             $dataResult[] = $d;
@@ -398,7 +554,7 @@ class ArticlesController extends AppController {
             array(
                 'table' => 'feed_urls',
                 'alias' => 'FeedUrl',
-                'type' => 'INNER',
+                'type' => 'LEFT',
                 'conditions'=> array(
                     'SharedLog.feed_url_id = FeedUrl.id', 
                 )
@@ -449,6 +605,8 @@ class ArticlesController extends AppController {
                     $social_type = 'Facebook';
                 }elseif($row['SharedLog']['social_type'] == 4){
                     $social_type = 'Google';
+                }elseif($row['SharedLog']['social_type'] == 5){
+                    $social_type = 'Facebook Page';
                 }
             }
 
